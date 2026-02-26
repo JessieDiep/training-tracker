@@ -196,8 +196,8 @@ module.exports = async function handler(req, res) {
 Name: Jess
 Race: Sprint Triathlon, July 18, 2026 (${daysToRace} days away)
 Goal: Finish under 2 hours
-Distances: 750m swim · 20km bike · 5km run
-Target splits: ~22min swim · ~45min bike · ~30min run · ~8min transitions
+Distances: 500m swim · 25km bike · 5km run
+Target splits: ~15min swim · ~50min bike · ~30min run · ~8min transitions
 Training phase: ${phase}
 Active injuries / flags: ${injuryFlags}
 
