@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import {
   getThisWeekWorkouts,
   getRecentWorkouts,
-  saveWorkout,
   getDiscEmoji,
   getDiscStyle,
   formatWorkoutDetail,
@@ -23,8 +22,6 @@ const DISCIPLINES = [
 // Weekly session goals per discipline
 const WEEKLY_GOALS = { swim: 2, bike: 2, run: 1, strength: 1, climb: 1 }
 
-const MOODS = ['😴', '💪', '🔥', '😤', '💀']
-
 export default function Home() {
   const navigate = useNavigate()
 
@@ -33,15 +30,6 @@ export default function Home() {
   const [recentWorkouts,    setRecentWorkouts]    = useState([])
   const [loading,           setLoading]           = useState(true)
   const [fetchError,        setFetchError]        = useState(false)
-
-  // Modal state
-  const [showLogModal,      setShowLogModal]      = useState(false)
-  const [selectedDisc,      setSelectedDisc]      = useState(null)
-  const [duration,          setDuration]          = useState(30)
-  const [effort,            setEffort]            = useState(0)
-  const [mood,              setMood]              = useState(null)
-  const [saving,            setSaving]            = useState(false)
-  const [saved,             setSaved]             = useState(false)
 
   useEffect(() => {
     // Compare date-only (no time) so the count is always whole days
@@ -94,42 +82,6 @@ export default function Home() {
     goal: WEEKLY_GOALS[d.id] ?? 2,
   }))
 
-  function resetModal() {
-    setSelectedDisc(null)
-    setDuration(30)
-    setEffort(0)
-    setMood(null)
-  }
-
-  async function handleSave() {
-    if (!selectedDisc) return
-    setSaving(true)
-    try {
-      await saveWorkout({
-        discipline: selectedDisc,
-        duration,
-        effort: effort || null,
-        mood,
-        details: {},
-      })
-      setSaved(true)
-      const [week, recent] = await Promise.all([getThisWeekWorkouts(), getRecentWorkouts(7)])
-      setWeekWorkouts(week)
-      setRecentWorkouts(recent)
-    } catch (err) {
-      console.error('Save failed:', err)
-    } finally {
-      setSaving(false)
-      setTimeout(() => {
-        setSaved(false)
-        setShowLogModal(false)
-        resetModal()
-      }, 1800)
-    }
-  }
-
-  const disc = DISCIPLINES.find(d => d.id === selectedDisc)
-
   return (
     <div style={s.screen}>
       <style>{css}</style>
@@ -164,7 +116,7 @@ export default function Home() {
         <button
           style={s.logBtn}
           className="log-btn"
-          onClick={() => setShowLogModal(true)}
+          onClick={() => navigate('/log')}
         >
           <span style={s.logBtnPlus}>+</span>
           <span style={s.logBtnText}>log workout</span>
@@ -239,98 +191,6 @@ export default function Home() {
 
         <div style={{ height: 24 }} />
       </div>
-
-      {/* ── QUICK LOG MODAL ── */}
-      {showLogModal && (
-        <div style={s.modalOverlay} onClick={() => setShowLogModal(false)}>
-          <div style={s.modalSheet} onClick={e => e.stopPropagation()}>
-            {saved ? (
-              <div style={s.savedState}>
-                <div style={s.savedSpark}>✦ · ✦</div>
-                <div style={s.savedText}>logged! great work</div>
-              </div>
-            ) : (
-              <>
-                <div style={s.modalHandle} />
-                <div style={s.modalTitle}>log workout</div>
-
-                <div style={s.modalLabel}>what did you do?</div>
-                <div style={s.discGrid}>
-                  {DISCIPLINES.map(d => (
-                    <button
-                      key={d.id}
-                      style={{
-                        ...s.discBtn,
-                        background: selectedDisc === d.id ? d.color : '#FFF5F8',
-                        border: `2px solid ${selectedDisc === d.id ? d.dark : '#F4A7B9'}`,
-                        transform: selectedDisc === d.id ? 'scale(1.06)' : 'scale(1)',
-                      }}
-                      onClick={() => setSelectedDisc(d.id)}
-                    >
-                      <span style={s.discEmoji}>{d.emoji}</span>
-                      <span style={{ ...s.discLabel, color: selectedDisc === d.id ? d.dark : '#B06090' }}>
-                        {d.label}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-
-                <div style={s.modalLabel}>duration</div>
-                <div style={s.durationRow}>
-                  <button style={s.durBtn} onClick={() => setDuration(Math.max(5, duration - 5))}>−</button>
-                  <div style={s.durDisplay}>
-                    <span style={s.durNum}>{duration}</span>
-                    <span style={s.durUnit}>min</span>
-                  </div>
-                  <button style={s.durBtn} onClick={() => setDuration(duration + 5)}>+</button>
-                </div>
-
-                <div style={s.modalLabel}>effort</div>
-                <div style={s.effortRow}>
-                  {[1, 2, 3, 4, 5].map(n => (
-                    <button key={n} style={s.starBtn} onClick={() => setEffort(n)}>
-                      <span style={{ fontSize: 24, filter: n <= effort ? 'none' : 'grayscale(1) opacity(0.35)' }}>⭐</span>
-                    </button>
-                  ))}
-                </div>
-
-                <div style={s.modalLabel}>mood</div>
-                <div style={s.moodRow}>
-                  {MOODS.map(m => (
-                    <button
-                      key={m}
-                      style={{
-                        ...s.moodBtn,
-                        background: mood === m ? '#F9C8D8' : '#FFF5F8',
-                        border: `2px solid ${mood === m ? '#F4A7B9' : '#F9D0DF'}`,
-                      }}
-                      onClick={() => setMood(m)}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  style={{ ...s.saveBtn, opacity: selectedDisc && !saving ? 1 : 0.5 }}
-                  disabled={!selectedDisc || saving}
-                  onClick={handleSave}
-                  className="save-btn"
-                >
-                  {saving ? 'saving…' : 'save workout'}
-                </button>
-
-                <button
-                  style={s.cancelBtn}
-                  onClick={() => { setShowLogModal(false); resetModal() }}
-                >
-                  cancel
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   )
 }
@@ -442,77 +302,6 @@ const s = {
   emptyState:   { textAlign: 'center', color: '#D4B0C0', fontSize: 13, fontWeight: 600, padding: '20px 0' },
   errorState:   { textAlign: 'center', color: '#C4354F', fontSize: 12, fontWeight: 600, padding: '20px 0', lineHeight: 1.5 },
 
-  // MODAL
-  modalOverlay: {
-    position: 'absolute', inset: 0,
-    background: 'rgba(139,26,74,0.2)', backdropFilter: 'blur(4px)',
-    display: 'flex', alignItems: 'flex-end', zIndex: 50,
-  },
-  modalSheet: {
-    width: '100%', background: '#FFF8FB',
-    borderRadius: '24px 24px 0 0', padding: '12px 20px 32px',
-    boxShadow: '0 -8px 32px rgba(194,24,91,0.15)',
-    maxHeight: '85%', overflowY: 'auto',
-  },
-  modalHandle: { width: 36, height: 4, background: '#F4A7B9', borderRadius: 2, margin: '0 auto 16px' },
-  modalTitle:  { fontSize: 18, fontWeight: 900, color: '#8B1A4A', marginBottom: 16, textAlign: 'center' },
-  modalLabel:  { fontSize: 11, fontWeight: 800, color: '#C077A0', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8, marginTop: 14 },
-
-  discGrid: { display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 },
-  discBtn: {
-    borderRadius: 12, padding: '10px 4px 8px',
-    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-    cursor: 'pointer', transition: 'transform 0.15s ease', fontFamily: 'inherit',
-  },
-  discEmoji: { fontSize: 20 },
-  discLabel: { fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.3 },
-
-  durationRow: { display: 'flex', alignItems: 'center', gap: 16, justifyContent: 'center' },
-  durBtn: {
-    width: 40, height: 40, borderRadius: 12,
-    background: '#F9D0DF', border: '2px solid #F4A7B9',
-    fontSize: 20, fontWeight: 900, color: '#C2185B', cursor: 'pointer',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit',
-  },
-  durDisplay: {
-    background: '#FFF0F5', border: '2px solid #F4A7B9', borderRadius: 14,
-    padding: '8px 20px', textAlign: 'center', minWidth: 90,
-  },
-  durNum:  { fontSize: 28, fontWeight: 900, color: '#8B1A4A' },
-  durUnit: { fontSize: 13, color: '#C077A0', fontWeight: 600, marginLeft: 4 },
-
-  effortRow: { display: 'flex', gap: 8, justifyContent: 'center' },
-  starBtn:   { background: 'transparent', border: 'none', cursor: 'pointer', padding: 4 },
-
-  moodRow: { display: 'flex', gap: 8, justifyContent: 'center' },
-  moodBtn: {
-    width: 44, height: 44, borderRadius: 12,
-    fontSize: 22, cursor: 'pointer',
-    display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit',
-  },
-
-  saveBtn: {
-    width: '100%', marginTop: 20,
-    background: 'linear-gradient(135deg, #F48FB1, #E91E8C)',
-    border: 'none', borderRadius: 14,
-    color: '#fff', fontSize: 16, fontWeight: 800,
-    padding: '14px 0', cursor: 'pointer',
-    boxShadow: '0 4px 14px rgba(233,30,140,0.3)',
-    letterSpacing: 0.2, fontFamily: 'inherit',
-  },
-  cancelBtn: {
-    width: '100%', marginTop: 8,
-    background: 'transparent', border: 'none',
-    color: '#C077A0', fontSize: 13, fontWeight: 700,
-    padding: '8px 0', cursor: 'pointer', fontFamily: 'inherit',
-  },
-
-  savedState: {
-    padding: '48px 0 32px',
-    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
-  },
-  savedSpark: { fontSize: 28, letterSpacing: 8, color: '#F06292' },
-  savedText:  { fontSize: 20, fontWeight: 900, color: '#8B1A4A' },
 }
 
 const css = `
@@ -525,6 +314,4 @@ const css = `
   .week-card:hover { transform: scale(1.04); }
   .recent-card { transition: transform 0.15s ease; }
   .recent-card:hover { transform: translateX(3px); }
-  .save-btn:hover { transform: translateY(-1px); }
-  .save-btn:active { transform: translateY(0); }
 `

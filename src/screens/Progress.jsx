@@ -189,15 +189,6 @@ export default function Progress() {
               <div style={s.legendRow}><div style={{ ...s.legendDot, background: '#F4D0DC' }}/>rest</div>
             </div>
           </div>
-          {/* Day indicators derived from thisWeek (approximate) */}
-          <div style={s.dayRow}>
-            {['M','T','W','T','F','S','S'].map((day, i) => (
-              <div key={i} style={s.dayCol}>
-                <div style={{ ...s.dayDot, background: '#F4D0DC' }} />
-                <div style={{ ...s.dayLabel, color: 'rgba(255,255,255,0.7)' }}>{day}</div>
-              </div>
-            ))}
-          </div>
         </div>
 
         {/* ── THIS WEEK vs LAST ── */}
@@ -317,11 +308,6 @@ const s = {
   weekLegend:   { display: 'flex', flexDirection: 'column', gap: 3 },
   legendRow:    { display: 'flex', alignItems: 'center', gap: 5, color: 'rgba(255,255,255,0.85)', fontSize: 9, fontWeight: 700 },
   legendDot:    { width: 8, height: 8, borderRadius: 4 },
-  dayRow:       { display: 'flex', gap: 6 },
-  dayCol:       { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 },
-  dayDot:       { width: 34, height: 34, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  dayLabel:     { fontSize: 10 },
-
   deltaGrid: { display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 },
   deltaCard: { borderRadius: 12, padding: '8px 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 },
   deltaEmoji:{ fontSize: 16 },
