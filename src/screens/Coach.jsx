@@ -1,14 +1,16 @@
 import { useState, useRef, useEffect } from 'react'
-import { getRecentWorkouts, formatWorkoutDetail, getDiscEmoji, getDiscStyle, formatRelativeDate } from '../lib/workouts'
+import { getRecentWorkouts, getThisWeekWorkouts, formatWorkoutDetail, getDiscEmoji, getDiscStyle, formatRelativeDate } from '../lib/workouts'
 
 const RACE_DATE = new Date(2026, 6, 18)
 
+const STORAGE_KEY = 'coach_messages_v1'
+
 const PROMPT_CHIPS = [
-  "How's my progress looking?",
-  "Am I on track for a sub-2hr sprint triathlon?",
-  "What do you recommend I do next week?",
-  "Tips for my foot injury and running",
-  "What should I prioritize this week?",
+  "Am I on track for sub-2hr?",
+  "How did I do vs the plan this week?",
+  "Any sessions I should add or skip?",
+  "How's my foot injury affecting training?",
+  "What should I focus on for the race?",
 ]
 
 const DISC_COLORS = {
@@ -20,16 +22,38 @@ const DISC_COLORS = {
   recover:  { color: '#B8F0E0', dark: '#1A7A5E' },
 }
 
+function nowStr() {
+  return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+}
+
+const WELCOME_MSG = {
+  role: 'ai',
+  text: "Hey Jess! I'm caught up on your recent training. What's on your mind?",
+  time: nowStr(),
+}
+
+function loadMessages() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    if (!raw) return [WELCOME_MSG]
+    const parsed = JSON.parse(raw)
+    if (Array.isArray(parsed) && parsed.length > 0) return parsed
+  } catch {}
+  return [WELCOME_MSG]
+}
+
 // ── CONTEXT BAR ───────────────────────────────────────────────────────────────
-function ContextBar({ daysToRace, recentWorkouts, injury }) {
+function ContextBar({ daysToRace, recentWorkouts, thisWeekWorkouts, injury }) {
   const [expanded, setExpanded] = useState(false)
+  const PLAN_SESSIONS = 6   // Mon strength, Tue run, Thu bike, Fri swim, Sat bike (Sun optional)
+  const weekDone = thisWeekWorkouts.length
 
   return (
     <div style={cx.wrap}>
       <button style={cx.pill} onClick={() => setExpanded(e => !e)}>
         <div style={cx.pillDot} />
         <span style={cx.pillText}>
-          Coach sees: {daysToRace}d to race · {recentWorkouts.length} recent workouts
+          Coach sees: {daysToRace}d to race · this week: {weekDone}/{PLAN_SESSIONS} sessions
           {injury ? ' · ⚠️ injury' : ''}
         </span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
@@ -49,8 +73,8 @@ function ContextBar({ daysToRace, recentWorkouts, injury }) {
               <span style={{ ...cx.drawerVal, color: '#C4354F' }}>{injury}</span>
             </div>
           )}
-          <div style={cx.drawerLabel}>Recent workouts</div>
-          {recentWorkouts.slice(0, 5).map((w, i) => {
+          <div style={cx.drawerLabel}>This week</div>
+          {thisWeekWorkouts.slice(0, 5).map((w, i) => {
             const d = DISC_COLORS[w.discipline] ?? { color: '#F4D0DC', dark: '#C077A0' }
             return (
               <div key={i} style={cx.workoutRow}>
@@ -63,8 +87,8 @@ function ContextBar({ daysToRace, recentWorkouts, injury }) {
               </div>
             )
           })}
-          {recentWorkouts.length === 0 && (
-            <div style={{ color: '#C0A0B8', fontSize: 11 }}>No recent workouts logged</div>
+          {thisWeekWorkouts.length === 0 && (
+            <div style={{ color: '#C0A0B8', fontSize: 11 }}>No sessions logged this week yet</div>
           )}
         </div>
       )}
@@ -148,13 +172,12 @@ const ty = { dot: { width: 7, height: 7, borderRadius: 4, background: '#F4A7B9' 
 
 // ── MAIN ─────────────────────────────────────────────────────────────────────
 export default function Coach() {
-  const [messages,      setMessages]      = useState([
-    { role: 'ai', text: "Hey Jess! I'm caught up on your recent training. What's on your mind?", time: nowStr() }
-  ])
-  const [input,         setInput]         = useState('')
-  const [typing,        setTyping]        = useState(false)
-  const [recentWorkouts,setRecentWorkouts]= useState([])
-  const [daysToRace,    setDaysToRace]    = useState(0)
+  const [messages,         setMessages]         = useState(loadMessages)
+  const [input,            setInput]            = useState('')
+  const [typing,           setTyping]           = useState(false)
+  const [recentWorkouts,   setRecentWorkouts]   = useState([])
+  const [thisWeekWorkouts, setThisWeekWorkouts] = useState([])
+  const [daysToRace,       setDaysToRace]       = useState(0)
   const scrollRef = useRef(null)
 
   const INJURY = 'Foot injury — modified run sessions'
@@ -162,13 +185,25 @@ export default function Coach() {
   useEffect(() => {
     setDaysToRace(Math.max(Math.ceil((RACE_DATE - new Date()) / 86400000), 0))
     getRecentWorkouts(14).then(setRecentWorkouts).catch(console.error)
+    getThisWeekWorkouts().then(setThisWeekWorkouts).catch(console.error)
   }, [])
+
+  // Persist messages to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-50)))
+    } catch {}
+  }, [messages])
 
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight
     }
   }, [messages, typing])
+
+  function clearConversation() {
+    setMessages([{ ...WELCOME_MSG, time: nowStr() }])
+  }
 
   async function send(text) {
     if (!text.trim() || typing) return
@@ -178,9 +213,10 @@ export default function Coach() {
     setInput('')
     setTyping(true)
 
-    // Build history from all non-welcome messages for context
+    // Build history — cap at 20 turns before sending (server slices to 10)
     const history = messages
       .filter(m => m.role === 'user' || m.role === 'ai')
+      .slice(-20)
       .map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.text }))
 
     try {
@@ -221,15 +257,29 @@ export default function Coach() {
           <div style={s.pageTitle}>Coach</div>
           <div style={s.pageSub}>Powered by ChatGPT</div>
         </div>
-        <div style={s.onlineBadge}>
-          <div style={s.onlineDot} />
-          Online
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button style={s.clearBtn} onClick={clearConversation} title="Clear conversation">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+              <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="#C077A0" strokeWidth="2"
+                    strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Clear
+          </button>
+          <div style={s.onlineBadge}>
+            <div style={s.onlineDot} />
+            Online
+          </div>
         </div>
       </div>
 
       {/* CONTEXT BAR */}
       <div style={{ padding: '10px 16px 0' }}>
-        <ContextBar daysToRace={daysToRace} recentWorkouts={recentWorkouts} injury={INJURY} />
+        <ContextBar
+          daysToRace={daysToRace}
+          recentWorkouts={recentWorkouts}
+          thisWeekWorkouts={thisWeekWorkouts}
+          injury={INJURY}
+        />
       </div>
 
       {/* MESSAGES */}
@@ -274,10 +324,6 @@ export default function Coach() {
   )
 }
 
-function nowStr() {
-  return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-}
-
 // ── STYLES ────────────────────────────────────────────────────────────────────
 const s = {
   screen:     { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#FFF8FB', fontFamily: "'Nunito', system-ui, sans-serif" },
@@ -286,6 +332,7 @@ const s = {
   pageSub:    { fontSize: 10, color: '#C077A0', fontWeight: 700, marginTop: 1 },
   onlineBadge:{ display: 'flex', alignItems: 'center', gap: 5, background: '#E8FAF3', border: '1.5px solid #A8E6CF', borderRadius: 20, padding: '4px 10px', fontSize: 10, fontWeight: 800, color: '#1A7A5E' },
   onlineDot:  { width: 6, height: 6, borderRadius: 3, background: '#2D8B6F' },
+  clearBtn:   { display: 'flex', alignItems: 'center', gap: 4, background: 'none', border: '1.5px solid #F4C0D0', borderRadius: 12, padding: '4px 9px', fontSize: 10, fontWeight: 700, color: '#C077A0', cursor: 'pointer', fontFamily: 'inherit' },
 
   messages:   { flex: 1, overflowY: 'auto', padding: '12px 14px 4px', scrollbarWidth: 'none' },
 
