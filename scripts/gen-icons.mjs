@@ -22,6 +22,7 @@ function mask(size) {
 
 for (const { size, name } of SIZES) {
   await sharp(SRC)
+    .trim({ background: '#ffffff', threshold: 40 })  // strip white border first
     .resize(size, size, { fit: 'cover' })
     .ensureAlpha()
     .composite([{ input: mask(size), blend: 'dest-in' }])
