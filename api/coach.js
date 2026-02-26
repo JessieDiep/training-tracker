@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+const { createClient } = require('@supabase/supabase-js')
 
 /**
  * POST /api/coach
@@ -14,7 +14,7 @@ import { createClient } from '@supabase/supabase-js'
  * - Input is validated and capped before being forwarded
  * - max_tokens caps per-call cost regardless of input length
  */
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'message is required' })
   }
 
-  const openaiKey = process.env['OPENAI_API_KEY']
+  const openaiKey = process.env.OPENAI_API_KEY
   if (!openaiKey) {
     return res.status(500).json({ error: 'Server configuration error: missing API key' })
   }
@@ -34,8 +34,6 @@ export default async function handler(req, res) {
   const safeMessage = message.trim().slice(0, 500)
 
   // ── Fetch recent workouts from Supabase ────────────────────────────────────
-  // Support both plain and VITE_-prefixed names — Vercel exposes all env vars to
-  // serverless functions; the VITE_ prefix only matters to the Vite frontend bundler
   const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL
   const supabaseKey = process.env.SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE_ANON_KEY
 
@@ -104,7 +102,6 @@ COACHING GUIDELINES
 - If no workouts are logged yet, encourage Jess to start logging and offer a first-week plan.`
 
   // ── Build message array with conversation history ──────────────────────────
-  // Accept up to the last 6 turns (3 user + 3 assistant) to keep token cost bounded
   const recentHistory = Array.isArray(history)
     ? history.slice(-6).map(m => ({ role: m.role, content: String(m.content).slice(0, 500) }))
     : []
@@ -123,7 +120,7 @@ COACHING GUIDELINES
       'Authorization': `Bearer ${openaiKey}`,
     },
     body: JSON.stringify({
-      model:       'gpt-4o-mini',  // cheaper than gpt-4o, more than good enough for coaching Q&A
+      model:       'gpt-4o-mini',
       messages,
       max_tokens:  600,
       temperature: 0.7,
