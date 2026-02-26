@@ -143,9 +143,9 @@ function EffortSlider({ value, onChange }) {
         <div style={{ ...s.sliderThumb, left: `calc(${pct}% - 14px)`, background: color }} />
       </div>
       <div style={s.sliderLabels}>
-        <span style={s.sliderLabelL}>easy</span>
+        <span style={s.sliderLabelL}>Easy</span>
         <div style={{ ...s.sliderVal, color }}>{value}</div>
-        <span style={s.sliderLabelR}>max</span>
+        <span style={s.sliderLabelR}>Max</span>
       </div>
     </div>
   )
@@ -197,14 +197,14 @@ function ToggleGroup({ options, value, onChange, multi = false, accentBg, darkCo
 function SwimForm({ data, setData }) {
   return (
     <>
-      <Label>focus</Label>
+      <Label>Focus</Label>
       <ToggleGroup options={SWIM_FOCUS} value={data.focus} onChange={v => setData({ ...data, focus: v })} accentBg="#C8F0E4" darkColor="#2D8B6F" />
-      <Label>distance *</Label>
+      <Label>Distance *</Label>
       <PresetRow presets={SWIM_PRESETS} value={data.distance} onSelect={v => setData({ ...data, distance: v })} format={p => `${p}m`} darkColor="#2D8B6F" />
       <TapField value={data.distance} unit="m" allowDecimal={false} onConfirm={v => setData({ ...data, distance: v })} accentColor="#A8E6CF" darkColor="#2D8B6F" />
-      <Label>location</Label>
+      <Label>Location</Label>
       <ToggleGroup options={['Pool', 'Open Water']} value={data.location} onChange={v => setData({ ...data, location: v })} accentBg="#C8F0E4" darkColor="#2D8B6F" />
-      <Label>notes <span style={s.optional}>(optional)</span></Label>
+      <Label>Notes <span style={s.optional}>(optional)</span></Label>
       <textarea style={s.textarea} placeholder="e.g. smooth breathing, short repeats…" value={data.notes} onChange={e => setData({ ...data, notes: e.target.value })} />
     </>
   )
@@ -213,13 +213,13 @@ function SwimForm({ data, setData }) {
 function BikeForm({ data, setData }) {
   return (
     <>
-      <Label>type</Label>
+      <Label>Type</Label>
       <ToggleGroup options={BIKE_TYPES} value={data.type} onChange={v => setData({ ...data, type: v })} accentBg="#DDD0F8" darkColor="#6B4FBB" />
-      <Label>distance <span style={s.optional}>(optional)</span></Label>
+      <Label>Distance <span style={s.optional}>(optional)</span></Label>
       <TapField value={data.distance} unit="km" allowDecimal={true} onConfirm={v => setData({ ...data, distance: v })} accentColor="#C9B8F0" darkColor="#6B4FBB" />
-      <Label>location</Label>
+      <Label>Location</Label>
       <ToggleGroup options={['Indoor / Trainer', 'Outdoor']} value={data.location} onChange={v => setData({ ...data, location: v })} accentBg="#DDD0F8" darkColor="#6B4FBB" />
-      <Label>notes <span style={s.optional}>(optional)</span></Label>
+      <Label>Notes <span style={s.optional}>(optional)</span></Label>
       <textarea style={s.textarea} placeholder="e.g. smooth cadence, steady effort…" value={data.notes} onChange={e => setData({ ...data, notes: e.target.value })} />
     </>
   )
@@ -228,12 +228,12 @@ function BikeForm({ data, setData }) {
 function RunForm({ data, setData }) {
   return (
     <>
-      <Label>type</Label>
+      <Label>Type</Label>
       <ToggleGroup options={RUN_TYPES} value={data.type} onChange={v => setData({ ...data, type: v })} accentBg="#FFE0B8" darkColor="#C47A2B" />
-      <Label>distance *</Label>
+      <Label>Distance *</Label>
       <PresetRow presets={RUN_PRESETS} value={data.distance} onSelect={v => setData({ ...data, distance: v })} format={p => `${p}km`} darkColor="#C47A2B" />
       <TapField value={data.distance} unit="km" allowDecimal={true} onConfirm={v => setData({ ...data, distance: v })} accentColor="#FFD4A8" darkColor="#C47A2B" />
-      <Label>surface</Label>
+      <Label>Surface</Label>
       <ToggleGroup options={RUN_SURFACES} value={data.surface} onChange={v => setData({ ...data, surface: v })} accentBg="#FFE0B8" darkColor="#C47A2B" />
       <div style={s.flagRow}>
         <button
@@ -245,7 +245,7 @@ function RunForm({ data, setData }) {
           <span style={{ fontSize: 13, fontWeight: 700, color: data.footPain ? '#C4354F' : '#B8A0B0' }}>Modified / foot pain flagged</span>
         </button>
       </div>
-      <Label>notes <span style={s.optional}>(optional)</span></Label>
+      <Label>Notes <span style={s.optional}>(optional)</span></Label>
       <textarea style={s.textarea} placeholder="e.g. jog-walk combo, 2.2mi in 30min…" value={data.notes} onChange={e => setData({ ...data, notes: e.target.value })} />
     </>
   )
@@ -295,9 +295,9 @@ function StrengthForm({ data, setData, savedExercises, onSaveExercise }) {
           onConfirm={w => { addExercise(pendingEx.name, w); setFirstWeightOpen(false) }}
           onClose={() => { setFirstWeightOpen(false); setPendingEx(null) }} />
       )}
-      <Label>focus <span style={s.optional}>(multi-select)</span></Label>
+      <Label>Focus <span style={s.optional}>(multi-select)</span></Label>
       <ToggleGroup options={STRENGTH_FOCUS} value={data.focus} onChange={v => setData({ ...data, focus: v })} multi={true} accentBg="#FFF3A8" darkColor="#B8960A" />
-      <Label>exercises</Label>
+      <Label>Exercises</Label>
       {data.exercises.length > 0 && (
         <div style={s.exList}>
           {data.exercises.map((ex, i) => (
@@ -335,7 +335,7 @@ function StrengthForm({ data, setData, savedExercises, onSaveExercise }) {
           onChange={e => { setExInput(e.target.value); setShowSugg(true) }}
           onFocus={() => setShowSugg(true)} />
         {exInput.length > 0 && (
-          <button style={s.exAddBtn} onClick={() => pickExercise(exInput)}>add</button>
+          <button style={s.exAddBtn} onClick={() => pickExercise(exInput)}>Add</button>
         )}
       </div>
       {showSugg && exInput.length > 0 && (
@@ -350,7 +350,7 @@ function StrengthForm({ data, setData, savedExercises, onSaveExercise }) {
           )}
         </div>
       )}
-      <Label>session notes <span style={s.optional}>(optional)</span></Label>
+      <Label>Session notes <span style={s.optional}>(optional)</span></Label>
       <textarea style={s.textarea} placeholder="e.g. felt strong, glutes fired well…" value={data.notes} onChange={e => setData({ ...data, notes: e.target.value })} />
     </>
   )
@@ -371,9 +371,9 @@ function TapWeightField({ value, onChange }) {
 function RecoverForm({ data, setData }) {
   return (
     <>
-      <Label>type <span style={s.optional}>(multi-select)</span></Label>
+      <Label>Type <span style={s.optional}>(multi-select)</span></Label>
       <ToggleGroup options={RECOVER_TYPES} value={data.types} onChange={v => setData({ ...data, types: v })} multi={true} accentBg="#C8F5EA" darkColor="#1A7A5E" />
-      <Label>notes <span style={s.optional}>(optional)</span></Label>
+      <Label>Notes <span style={s.optional}>(optional)</span></Label>
       <textarea style={s.textarea} placeholder="e.g. 20 min walk, hip flexor stretches…" value={data.notes} onChange={e => setData({ ...data, notes: e.target.value })} />
     </>
   )
@@ -391,10 +391,10 @@ function ClimbForm({ data, setData }) {
   }
   return (
     <>
-      <Label>location</Label>
+      <Label>Location</Label>
       <ToggleGroup options={['Gym', 'Outdoor']} value={data.location} onChange={v => setData({ ...data, location: v })} accentBg="#FFD0DC" darkColor="#C4354F" />
-      <Label>routes</Label>
-      {data.routes.length === 0 && <div style={s.emptyRoutes}>add your routes below</div>}
+      <Label>Routes</Label>
+      {data.routes.length === 0 && <div style={s.emptyRoutes}>Add your routes below</div>}
       {data.routes.map((route, i) => (
         <div key={i} style={s.routeCard}>
           <div style={s.routeHeader}>
@@ -428,8 +428,8 @@ function ClimbForm({ data, setData }) {
           </div>
         </div>
       ))}
-      <button style={s.addRouteBtn} onClick={addRoute}>+ add route</button>
-      <Label>session notes <span style={s.optional}>(optional)</span></Label>
+      <button style={s.addRouteBtn} onClick={addRoute}>+ Add route</button>
+      <Label>Session notes <span style={s.optional}>(optional)</span></Label>
       <textarea style={s.textarea} placeholder="e.g. warmed up on 5.9s, projecting 5.11a overhang…" value={data.notes} onChange={e => setData({ ...data, notes: e.target.value })} />
     </>
   )
@@ -539,7 +539,7 @@ export default function Log() {
           <div style={{ width: 32 }} />
         )}
         <div style={s.pageTitle}>
-          {step === 'discipline' ? 'log workout' : disc ? `${disc.emoji} ${disc.label}` : 'log workout'}
+          {step === 'discipline' ? 'Log workout' : disc ? `${disc.emoji} ${disc.label}` : 'Log workout'}
         </div>
         <div style={{ width: 32 }} />
       </div>
@@ -554,13 +554,13 @@ export default function Log() {
                 <path d="M20 32L28 40L44 24" stroke="#C2185B" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
-            <div style={s.savedTitle}>logged!</div>
-            <div style={s.savedSub}>great work today</div>
+            <div style={s.savedTitle}>Logged!</div>
+            <div style={s.savedSub}>Great work today</div>
           </div>
 
         ) : step === 'discipline' ? (
           <>
-            <div style={s.stepHint}>what did you do today?</div>
+            <div style={s.stepHint}>What did you do today?</div>
             <div style={s.discGrid}>
               {DISCIPLINES.map(d => (
                 <button key={d.id}
@@ -576,22 +576,22 @@ export default function Log() {
 
         ) : (
           <>
-            <Label>duration *</Label>
+            <Label>Duration *</Label>
             <TapField value={duration} unit="min" onConfirm={v => setDuration(v)} />
             {getDiscForm()}
-            <Label>effort</Label>
+            <Label>Effort</Label>
             <EffortSlider value={effort} onChange={setEffort} />
             <button
               style={{ ...s.saveBtn, opacity: canSave() && !saving ? 1 : 0.45 }}
               className="save-btn"
               disabled={!canSave() || saving}
               onClick={handleSave}>
-              {saving ? 'saving…' : 'save workout'}
+              {saving ? 'Saving…' : 'Save workout'}
             </button>
             {!canSave() && (
-              <div style={s.requiredHint}>distance is required</div>
+              <div style={s.requiredHint}>Distance is required</div>
             )}
-            <button style={s.cancelBtn} onClick={() => setStep('discipline')}>back</button>
+            <button style={s.cancelBtn} onClick={() => setStep('discipline')}>Back</button>
           </>
         )}
         <div style={{ height: 32 }} />
@@ -614,7 +614,7 @@ const s = {
   discEmoji: { fontSize: 28 },
   discLabel: { fontSize: 12, fontWeight: 800 },
 
-  label:    { fontSize: 11, fontWeight: 800, color: '#C077A0', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8, marginTop: 16 },
+  label:    { fontSize: 11, fontWeight: 800, color: '#C077A0', marginBottom: 8, marginTop: 16 },
   optional: { fontWeight: 600, textTransform: 'none', letterSpacing: 0, color: '#D4B0C0', fontSize: 11 },
 
   tapField:     { display: 'flex', alignItems: 'center', gap: 6, background: '#FFF0F5', border: '1.5px solid #F4A7B9', borderRadius: 12, padding: '10px 14px', cursor: 'pointer', width: '100%', fontFamily: 'inherit' },

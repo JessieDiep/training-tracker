@@ -79,7 +79,7 @@ const ch = {
 const gradeLabels = { 9: '5.9', 10: '5.10', 11: '5.11', 12: '5.12' }
 
 function ClimbChart({ data }) {
-  if (!data || data.length === 0) return <div style={{ color: '#C0A0B8', fontSize: 12, textAlign: 'center', padding: '20px 0' }}>no climb data yet</div>
+  if (!data || data.length === 0) return <div style={{ color: '#C0A0B8', fontSize: 12, textAlign: 'center', padding: '20px 0' }}>No climb data yet</div>
 
   const W = 295, H = 80, PAD = 16
   const minG = 8, maxG = 12
@@ -168,32 +168,13 @@ export default function Progress() {
 
       {/* HEADER */}
       <div style={s.pageHeader}>
-        <div style={s.pageTitle}>progress</div>
+        <div style={s.pageTitle}>Progress</div>
       </div>
 
       <div style={s.scroll}>
-        {/* ── WEEKLY ACTIVITY SUMMARY ── */}
-        <div style={s.weekCard}>
-          <div style={s.weekCardTop}>
-            <div>
-              <div style={s.weekCardTitle}>this week</div>
-              <div style={s.weekCardSub}>
-                {Object.values(thisWeek).reduce((a, b) => a + b, 0) > 0
-                  ? `${Object.keys(DISC_CONFIG).filter(k => (thisWeek[k] ?? 0) > 0).length} disciplines active`
-                  : 'log your first workout!'}
-              </div>
-            </div>
-            <div style={s.weekLegend}>
-              <div style={s.legendRow}><div style={{ ...s.legendDot, background: '#E91E8C' }}/>train</div>
-              <div style={s.legendRow}><div style={{ ...s.legendDot, background: '#A8E6CF' }}/>recover</div>
-              <div style={s.legendRow}><div style={{ ...s.legendDot, background: '#F4D0DC' }}/>rest</div>
-            </div>
-          </div>
-        </div>
-
         {/* ── THIS WEEK vs LAST ── */}
         <div style={s.sectionHeader}>
-          <span style={s.sectionTitle}>this week vs last</span>
+          <span style={s.sectionTitle}>This week vs last</span>
         </div>
         <div style={s.deltaGrid}>
           {Object.keys(DISC_CONFIG).map(key => {
@@ -216,7 +197,7 @@ export default function Progress() {
 
         {/* ── WEEKLY VOLUME CHART ── */}
         <div style={s.sectionHeader}>
-          <span style={s.sectionTitle}>weekly volume</span>
+          <span style={s.sectionTitle}>Weekly volume</span>
         </div>
         <div style={s.discTabs}>
           {Object.keys(DISC_CONFIG).map(key => {
@@ -234,14 +215,14 @@ export default function Progress() {
         <div style={{ ...s.chartCard, borderColor: disc.color }}>
           <div style={s.chartHeader}>
             <span style={{ ...s.chartTitle, color: disc.dark }}>{disc.label}</span>
-            <span style={s.chartUnit}>{disc.unit === 'sessions' ? 'sessions / week' : `${disc.unit} / week`}</span>
+            <span style={s.chartUnit}>{disc.unit === 'sessions' ? 'Sessions / week' : `${disc.unit} / week`}</span>
           </div>
           {loading ? (
-            <div style={{ color: '#C0A0B8', fontSize: 12, textAlign: 'center', padding: '20px 0' }}>loading…</div>
+            <div style={{ color: '#C0A0B8', fontSize: 12, textAlign: 'center', padding: '20px 0' }}>Loading…</div>
           ) : activeDisc === 'climb' ? (
             <>
               <ClimbChart data={climbGrades} />
-              <div style={s.climbNote}>highest grade reached per week</div>
+              <div style={s.climbNote}>Highest grade reached per week</div>
             </>
           ) : (
             <BarChart
@@ -260,12 +241,12 @@ export default function Progress() {
 
         {/* ── CLIMBING SENDS ── */}
         <div style={s.sectionHeader}>
-          <span style={s.sectionTitle}>climbing sends</span>
+          <span style={s.sectionTitle}>Climbing sends</span>
         </div>
         <div style={s.sendCard}>
           {Object.keys(climbSends).length === 0 ? (
             <div style={{ color: '#C0A0B8', fontSize: 12, textAlign: 'center', padding: '8px 0' }}>
-              no sends logged yet
+              No sends logged yet
             </div>
           ) : (() => {
             const sorted = Object.keys(climbSends).sort()
@@ -301,13 +282,6 @@ const s = {
   sectionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, marginTop: 18 },
   sectionTitle:  { fontSize: 14, fontWeight: 900, color: '#8B1A4A' },
 
-  weekCard:     { background: 'linear-gradient(135deg, #FF8FAB 0%, #E91E8C 100%)', borderRadius: 18, padding: '14px 16px 16px', boxShadow: '0 4px 16px rgba(233,30,140,0.25)' },
-  weekCardTop:  { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 },
-  weekCardTitle:{ fontSize: 15, fontWeight: 900, color: '#fff' },
-  weekCardSub:  { fontSize: 10, color: 'rgba(255,255,255,0.8)', fontWeight: 700, marginTop: 3 },
-  weekLegend:   { display: 'flex', flexDirection: 'column', gap: 3 },
-  legendRow:    { display: 'flex', alignItems: 'center', gap: 5, color: 'rgba(255,255,255,0.85)', fontSize: 9, fontWeight: 700 },
-  legendDot:    { width: 8, height: 8, borderRadius: 4 },
   deltaGrid: { display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 },
   deltaCard: { borderRadius: 12, padding: '8px 4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 },
   deltaEmoji:{ fontSize: 16 },

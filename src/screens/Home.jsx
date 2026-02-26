@@ -89,8 +89,8 @@ export default function Home() {
       {/* ── HEADER ── */}
       <div style={s.header}>
         <div>
-          <div style={s.headerGreeting}>good morning, jess</div>
-          <div style={s.headerSub}>let's get it</div>
+          <div style={s.headerGreeting}>Good morning, Jess</div>
+          <div style={s.headerSub}>Let's get it</div>
         </div>
       </div>
 
@@ -100,9 +100,9 @@ export default function Home() {
         {/* RACE COUNTDOWN */}
         <div style={s.raceCard} className="race-card">
           <div style={s.raceCardInner}>
-            <div style={s.raceLabel}>race day countdown</div>
+            <div style={s.raceLabel}>Race day countdown</div>
             <div style={s.raceDays}>{daysLeft}</div>
-            <div style={s.raceSub}>days until your triathlon</div>
+            <div style={s.raceSub}>Days until your triathlon</div>
             <div style={s.raceDate}>July 18, 2026</div>
           </div>
           <div style={s.raceDots}>
@@ -119,13 +119,13 @@ export default function Home() {
           onClick={() => navigate('/log')}
         >
           <span style={s.logBtnPlus}>+</span>
-          <span style={s.logBtnText}>log workout</span>
+          <span style={s.logBtnText}>Log workout</span>
         </button>
 
         {/* THIS WEEK */}
         <div style={s.sectionHeader}>
-          <span style={s.sectionTitle}>this week</span>
-          <button style={s.seeAllBtn} onClick={() => navigate('/progress')}>see all →</button>
+          <span style={s.sectionTitle}>This week</span>
+          <button style={s.seeAllBtn} onClick={() => navigate('/progress')}>See all →</button>
         </div>
 
         <div style={s.weekGrid}>
@@ -151,20 +151,20 @@ export default function Home() {
 
         {/* RECENT WORKOUTS */}
         <div style={s.sectionHeader}>
-          <span style={s.sectionTitle}>recent workouts</span>
+          <span style={s.sectionTitle}>Recent workouts</span>
         </div>
 
         <div style={s.recentList}>
           {loading && (
-            <div style={s.emptyState}>loading…</div>
+            <div style={s.emptyState}>Loading…</div>
           )}
           {!loading && fetchError && (
             <div style={s.errorState}>
-              couldn't load workouts — check Supabase env vars and restart the dev server
+              Couldn't load workouts — check Supabase env vars and restart the dev server
             </div>
           )}
           {!loading && !fetchError && recentWorkouts.length === 0 && (
-            <div style={s.emptyState}>no workouts yet — log your first one!</div>
+            <div style={s.emptyState}>No workouts yet — log your first one!</div>
           )}
           {recentWorkouts.slice(0, 5).map((w, i) => {
             const dc = getDiscStyle(w.discipline)
@@ -235,7 +235,7 @@ const s = {
     boxShadow: '0 6px 20px rgba(240,98,146,0.35)',
   },
   raceCardInner: { position: 'relative', zIndex: 1 },
-  raceLabel:  { fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 700, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4 },
+  raceLabel:  { fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 700, marginBottom: 4 },
   raceDays:   { fontSize: 64, fontWeight: 900, color: '#fff', lineHeight: 1, letterSpacing: -3 },
   raceSub:    { fontSize: 14, color: 'rgba(255,255,255,0.9)', fontWeight: 600, marginTop: 2 },
   raceDate:   { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 6, fontWeight: 600 },

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 const TABS = [
   {
     id: 'home',
-    label: 'home',
+    label: 'Home',
     path: '/',
     icon: (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -19,7 +19,7 @@ const TABS = [
   },
   {
     id: 'log',
-    label: 'log',
+    label: 'Log',
     path: '/log',
     icon: (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -37,7 +37,7 @@ const TABS = [
   },
   {
     id: 'progress',
-    label: 'progress',
+    label: 'Progress',
     path: '/progress',
     icon: (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -52,7 +52,7 @@ const TABS = [
   },
   {
     id: 'coach',
-    label: 'coach',
+    label: 'Coach',
     path: '/coach',
     icon: (active) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
@@ -120,8 +120,6 @@ const styles = {
   label: {
     fontSize: 9,
     fontWeight: 700,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
     fontFamily: 'inherit',
   },
 }

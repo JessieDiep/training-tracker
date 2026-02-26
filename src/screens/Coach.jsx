@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { getRecentWorkouts, formatWorkoutDetail, getDiscEmoji, getDiscStyle, formatRelativeDate } from '../lib/workouts'
 
-const RACE_DATE = new Date('2025-07-18')
+const RACE_DATE = new Date(2026, 6, 18)
 
 const PROMPT_CHIPS = [
   "How's my swim volume looking?",
@@ -41,7 +41,7 @@ function ContextBar({ daysToRace, recentWorkouts, injury }) {
         <div style={cx.drawer}>
           <div style={cx.drawerRow}>
             <span style={cx.drawerLabel}>Race</span>
-            <span style={cx.drawerVal}>July 18, 2025 · {daysToRace} days</span>
+            <span style={cx.drawerVal}>July 18, 2026 · {daysToRace} days</span>
           </div>
           {injury && (
             <div style={cx.drawerRow}>
@@ -64,7 +64,7 @@ function ContextBar({ daysToRace, recentWorkouts, injury }) {
             )
           })}
           {recentWorkouts.length === 0 && (
-            <div style={{ color: '#C0A0B8', fontSize: 11 }}>no recent workouts logged</div>
+            <div style={{ color: '#C0A0B8', fontSize: 11 }}>No recent workouts logged</div>
           )}
         </div>
       )}
@@ -79,7 +79,7 @@ const cx = {
   pillText:     { flex: 1, fontSize: 11, fontWeight: 700, color: '#1A7A5E', textAlign: 'left' },
   drawer:       { background: '#F0FDF8', border: '1.5px solid #A8E6CF', borderTop: 'none', borderRadius: '0 0 12px 12px', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 6 },
   drawerRow:    { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  drawerLabel:  { fontSize: 10, fontWeight: 800, color: '#2D8B6F', textTransform: 'uppercase', letterSpacing: 0.4, marginTop: 4 },
+  drawerLabel:  { fontSize: 10, fontWeight: 800, color: '#2D8B6F', marginTop: 4 },
   drawerVal:    { fontSize: 11, fontWeight: 700, color: '#1A7A5E' },
   workoutRow:   { display: 'flex', alignItems: 'center', gap: 6 },
   workoutDot:   { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
@@ -210,12 +210,12 @@ export default function Coach() {
       {/* HEADER */}
       <div style={s.pageHeader}>
         <div>
-          <div style={s.pageTitle}>coach</div>
-          <div style={s.pageSub}>powered by ChatGPT</div>
+          <div style={s.pageTitle}>Coach</div>
+          <div style={s.pageSub}>Powered by ChatGPT</div>
         </div>
         <div style={s.onlineBadge}>
           <div style={s.onlineDot} />
-          online
+          Online
         </div>
       </div>
 
