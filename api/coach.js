@@ -2,17 +2,11 @@ const { createClient } = require('@supabase/supabase-js')
 
 /**
  * POST /api/coach
- * Body: {
- *   message:     string,           // user's current question (max 500 chars)
- *   history?:    { role, content }[], // prior turns for context (last ~6)
- *   phase?:      string,
- *   injuryFlags?: string,
- * }
+ * Body: { message, history?, phase?, injuryFlags? }
  *
- * Security notes:
- * - OPENAI_API_KEY never leaves the server — it is a Vercel env var
- * - Input is validated and capped before being forwarded
- * - max_tokens caps per-call cost regardless of input length
+ * The OpenAI key is fetched from Supabase `config` table at runtime,
+ * bypassing Vercel's env-var stripping for non-VITE_ variables.
+ * Fallback to process.env.OPENAI_API_KEY for local dev.
  */
 module.exports = async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -25,48 +19,54 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'message is required' })
   }
 
-  const openaiKey = process.env.OPENAI_API_KEY
+  // ── Supabase client (VITE_-prefixed vars survive Vercel's build pipeline) ──
+  const supabaseUrl = process.env.VITE_SUPABASE_URL
+  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY
+
+  if (!supabaseUrl || !supabaseKey) {
+    return res.status(500).json({ error: 'Supabase not configured' })
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey)
+
+  // ── Resolve OpenAI key: Supabase config table → process.env fallback ───────
+  let openaiKey = process.env.OPENAI_API_KEY
   if (!openaiKey) {
-    // Debug: show ALL custom env var keys (exclude standard system vars)
-    const customKeys = Object.keys(process.env).filter(k =>
-      !k.startsWith('AWS_') && !k.startsWith('VERCEL_') && !k.startsWith('NODE') &&
-      !['TZ','PATH','HOME','PWD','LANG','SHELL','SHLVL','_','LD_LIBRARY_PATH','NOW_REGION',
-        'NX_DAEMON','TURBO_CACHE','TURBO_DOWNLOAD_LOCAL_ENABLED','TURBO_PLATFORM_ENV',
-        'TURBO_REMOTE_ONLY','TURBO_RUN_SUMMARY'].includes(k)
-    ).sort()
-    return res.status(500).json({
-      error: `missing API key [region:${process.env.VERCEL_REGION || '?'} env:${process.env.VERCEL_ENV || '?'} target:${process.env.VERCEL_TARGET_ENV || '?'}]`,
-      customEnvKeys: customKeys,
-      nodeVersion: process.version,
-      moduleType: typeof require !== 'undefined' ? 'commonjs' : 'esm'
-    })
+    try {
+      const { data, error } = await supabase
+        .from('config')
+        .select('value')
+        .eq('key', 'openai_api_key')
+        .single()
+      if (!error && data?.value) openaiKey = data.value
+    } catch (e) {
+      console.error('Failed to fetch API key from Supabase config:', e)
+    }
+  }
+
+  if (!openaiKey) {
+    return res.status(500).json({ error: 'Server configuration error: missing API key' })
   }
 
   // Cap input length to prevent token abuse
   const safeMessage = message.trim().slice(0, 500)
 
-  // ── Fetch recent workouts from Supabase ────────────────────────────────────
-  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL
-  const supabaseKey = process.env.SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE_ANON_KEY
-
+  // ── Fetch recent workouts ──────────────────────────────────────────────────
   let recentWorkouts = []
-  if (supabaseUrl && supabaseKey) {
-    try {
-      const supabase = createClient(supabaseUrl, supabaseKey)
-      const since = new Date()
-      since.setDate(since.getDate() - 28) // 4 weeks of context
-      const sinceStr = since.toISOString().split('T')[0]
-      const { data, error: dbError } = await supabase
-        .from('workouts')
-        .select('date, discipline, duration_minutes, effort, details, notes')
-        .gte('date', sinceStr)
-        .order('date', { ascending: false })
-        .limit(40)
-      if (dbError) console.error('Supabase error:', dbError)
-      else recentWorkouts = data ?? []
-    } catch (e) {
-      console.error('Supabase init error:', e)
-    }
+  try {
+    const since = new Date()
+    since.setDate(since.getDate() - 28)
+    const sinceStr = since.toISOString().split('T')[0]
+    const { data, error: dbError } = await supabase
+      .from('workouts')
+      .select('date, discipline, duration_minutes, effort, details, notes')
+      .gte('date', sinceStr)
+      .order('date', { ascending: false })
+      .limit(40)
+    if (dbError) console.error('Supabase workout error:', dbError)
+    else recentWorkouts = data ?? []
+  } catch (e) {
+    console.error('Supabase workouts fetch error:', e)
   }
 
   const workoutSummary = recentWorkouts.map(w => {
@@ -85,8 +85,7 @@ module.exports = async function handler(req, res) {
   }).join('\n')
 
   const daysToRace = Math.max(
-    Math.ceil((new Date(2026, 6, 18) - new Date()) / 86400000),
-    0
+    Math.ceil((new Date(2026, 6, 18) - new Date()) / 86400000), 0
   )
 
   // ── System prompt ──────────────────────────────────────────────────────────
@@ -113,15 +112,15 @@ COACHING GUIDELINES
 - If asked about pacing or race readiness, compare against the sub-2hr target splits above.
 - If no workouts are logged yet, encourage Jess to start logging and offer a first-week plan.`
 
-  // ── Build message array with conversation history ──────────────────────────
+  // ── Conversation history (last 6 turns) ───────────────────────────────────
   const recentHistory = Array.isArray(history)
     ? history.slice(-6).map(m => ({ role: m.role, content: String(m.content).slice(0, 500) }))
     : []
 
   const messages = [
-    { role: 'system',    content: systemPrompt },
+    { role: 'system', content: systemPrompt },
     ...recentHistory,
-    { role: 'user',      content: safeMessage },
+    { role: 'user',   content: safeMessage },
   ]
 
   // ── Call OpenAI ────────────────────────────────────────────────────────────
