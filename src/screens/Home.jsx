@@ -9,9 +9,13 @@ import {
   formatRelativeDate,
   deleteWorkout,
   updateWorkout,
+  getTrainingStartDate,
 } from '../lib/workouts'
 
-const RACE_DATE = new Date(2026, 6, 18) // July 18, 2026 (month is 0-indexed)
+const RACE_DATE     = new Date(2026, 6, 18)  // July 18, 2026 (month is 0-indexed)
+const FALLBACK_START = new Date(2026, 0, 5)   // Jan 5 2026 — used if no workouts yet
+const RING_R = 36                              // SVG ring radius (inside 96×96 viewBox)
+const RING_C = 2 * Math.PI * RING_R           // full circumference ≈ 226.2
 
 function getGreeting() {
   const h = new Date().getHours()
@@ -330,6 +334,8 @@ export default function Home() {
   const [loading,         setLoading]         = useState(true)
   const [fetchError,      setFetchError]      = useState(false)
   const [selectedWorkout, setSelectedWorkout] = useState(null)
+  const [trainingStart,   setTrainingStart]   = useState(FALLBACK_START)
+  const [ringProgress,    setRingProgress]    = useState(0)
 
   useEffect(() => {
     // Compare date-only (no time) so the count is always whole days
@@ -370,11 +376,25 @@ export default function Home() {
       .catch(err => { console.error(err); setFetchError(true) })
       .finally(() => setLoading(false))
 
+    getTrainingStartDate()
+      .then(d => { if (d) setTrainingStart(d) })
+      .catch(() => {})
+
     return () => {
       clearTimeout(timeoutId)
       clearInterval(intervalId)
     }
   }, [])
+
+  // Animate ring fill after trainingStart resolves
+  useEffect(() => {
+    const today     = new Date()
+    const totalDays = Math.max(Math.round((RACE_DATE - trainingStart) / 86400000), 1)
+    const elapsed   = Math.round((today - trainingStart) / 86400000)
+    const pct       = Math.min(Math.max(elapsed / totalDays, 0), 1)
+    const t = setTimeout(() => setRingProgress(pct), 300)
+    return () => clearTimeout(t)
+  }, [trainingStart])
 
   function handleDeleted(id) {
     setRecentWorkouts(prev => prev.filter(w => w.id !== id))
@@ -387,6 +407,10 @@ export default function Home() {
     setWeekWorkouts(prev => prev.map(w => w.id === updated.id ? updated : w))
     setSelectedWorkout(updated)
   }
+
+  const pctDone       = Math.round(ringProgress * 100)
+  const weeksLeft     = Math.floor(daysLeft / 7)
+  const daysRemainder = daysLeft % 7
 
   const weekData = DISCIPLINES.slice(0, 5).map(d => ({
     id:   d.id,
@@ -411,16 +435,36 @@ export default function Home() {
 
         {/* RACE COUNTDOWN */}
         <div style={s.raceCard} className="race-card">
-          <div style={s.raceCardInner}>
+          {/* left — text */}
+          <div style={s.raceLeft}>
             <div style={s.raceLabel}>Race day countdown</div>
             <div style={s.raceDays}>{daysLeft}</div>
             <div style={s.raceSub}>Days until your triathlon</div>
-            <div style={s.raceDate}>July 18, 2026</div>
+            <div style={s.raceWks}>
+              {weeksLeft > 0 ? `${weeksLeft} wks · ` : ''}
+              {daysRemainder} day{daysRemainder !== 1 ? 's' : ''} · July 18, 2026
+            </div>
           </div>
-          <div style={s.raceDots}>
-            {Array.from({ length: Math.min(daysLeft, 20) }).map((_, i) => (
-              <div key={i} style={{ ...s.raceDot, opacity: 1 - i * 0.04 }} />
-            ))}
+          {/* right — progress ring */}
+          <div style={s.raceRight}>
+            <svg width="96" height="96" viewBox="0 0 96 96">
+              <circle cx="48" cy="48" r={RING_R} fill="none"
+                stroke="rgba(255,255,255,0.2)" strokeWidth="7" />
+              <circle cx="48" cy="48" r={RING_R} fill="none"
+                stroke="rgba(255,255,255,0.92)" strokeWidth="7"
+                strokeLinecap="round"
+                strokeDasharray={RING_C}
+                strokeDashoffset={RING_C * (1 - ringProgress)}
+                transform="rotate(-90 48 48)"
+                style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)' }}
+              />
+              <g transform="translate(48, 48)">
+                <text y="-2" textAnchor="middle"
+                  fontSize="18" fontWeight="900" fill="white" fontFamily="Nunito, sans-serif">{pctDone}%</text>
+                <text y="13" textAnchor="middle"
+                  fontSize="9" fontWeight="700" fill="rgba(255,255,255,0.8)" fontFamily="Nunito, sans-serif">done</text>
+              </g>
+            </svg>
           </div>
         </div>
 
@@ -553,20 +597,17 @@ const s = {
     borderRadius: 20,
     padding: '20px 20px 16px',
     marginBottom: 14,
-    position: 'relative',
-    overflow: 'hidden',
     boxShadow: '0 6px 20px rgba(240,98,146,0.35)',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 8,
   },
-  raceCardInner: { position: 'relative', zIndex: 1 },
-  raceLabel:  { fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 700, marginBottom: 4 },
-  raceDays:   { fontSize: 64, fontWeight: 900, color: '#fff', lineHeight: 1, letterSpacing: -3 },
-  raceSub:    { fontSize: 14, color: 'rgba(255,255,255,0.9)', fontWeight: 600, marginTop: 2 },
-  raceDate:   { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 6, fontWeight: 600 },
-  raceDots: {
-    position: 'absolute', bottom: 12, right: 16,
-    display: 'flex', flexWrap: 'wrap', gap: 4, width: 100, justifyContent: 'flex-end',
-  },
-  raceDot: { width: 6, height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.5)' },
+  raceLeft:  { flex: 1, minWidth: 0 },
+  raceRight: { flexShrink: 0 },
+  raceLabel: { fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 700, marginBottom: 4 },
+  raceDays:  { fontSize: 60, fontWeight: 900, color: '#fff', lineHeight: 1, letterSpacing: -2 },
+  raceSub:   { fontSize: 13, color: 'rgba(255,255,255,0.9)', fontWeight: 600, marginTop: 2 },
+  raceWks:   { fontSize: 11, color: 'rgba(255,255,255,0.7)', marginTop: 6, fontWeight: 600 },
 
   // LOG BUTTON
   logBtn: {

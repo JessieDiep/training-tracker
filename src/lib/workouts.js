@@ -165,6 +165,18 @@ export async function getTriWorkouts() {
   return data ?? []
 }
 
+/** Returns the date of the earliest logged workout (used for training progress ring). */
+export async function getTrainingStartDate() {
+  const { data, error } = await supabase
+    .from('workouts')
+    .select('date')
+    .order('date', { ascending: true })
+    .limit(1)
+    .single()
+  if (error || !data) return null
+  return new Date(data.date + 'T12:00:00')   // local noon to avoid timezone shifts
+}
+
 export async function deleteWorkout(id) {
   const { error } = await supabase.from('workouts').delete().eq('id', id)
   if (error) throw error

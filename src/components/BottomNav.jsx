@@ -116,10 +116,11 @@ const styles = {
     background: 'transparent',
     cursor: 'pointer',
     padding: '4px 0',
+    fontFamily: "'Nunito', system-ui, sans-serif",
   },
   label: {
     fontSize: 9,
     fontWeight: 700,
-    fontFamily: 'inherit',
+    fontFamily: "'Nunito', system-ui, sans-serif",
   },
 }

@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add src/screens/Home.jsx src/screens/Progress.jsx)",
+      "Bash(git commit:*)",
+      "Bash(npm run gen-icons)",
+      "Bash(git add public/icons/apple-touch-icon.png public/icons/icon-192.png public/icons/icon-512.png scripts/gen-icons.mjs)",
+      "Bash(git push)",
+      "Bash(git add src/index.css src/screens/Home.jsx)",
+      "Bash(git add api/coach.js src/screens/Coach.jsx)"
+    ]
+  }
+}
