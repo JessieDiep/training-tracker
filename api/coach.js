@@ -25,6 +25,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'message is required' })
   }
 
+  // Debug: surface env var availability so we can diagnose missing key
+  const openaiKey = process.env.OPENAI_API_KEY
+  if (!openaiKey) {
+    const available = Object.keys(process.env).filter(k => k.startsWith('OPENAI') || k.startsWith('VITE_')).join(', ')
+    return res.status(500).json({ error: `OPENAI_API_KEY not found. Env keys present: [${available || 'none'}]` })
+  }
+
   // Cap input length to prevent token abuse
   const safeMessage = message.trim().slice(0, 500)
 
@@ -115,7 +122,7 @@ COACHING GUIDELINES
     method: 'POST',
     headers: {
       'Content-Type':  'application/json',
-      'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+      'Authorization': `Bearer ${openaiKey}`,
     },
     body: JSON.stringify({
       model:       'gpt-4o-mini',  // cheaper than gpt-4o, more than good enough for coaching Q&A
