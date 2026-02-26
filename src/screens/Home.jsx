@@ -7,6 +7,8 @@ import {
   getDiscStyle,
   formatWorkoutDetail,
   formatRelativeDate,
+  deleteWorkout,
+  updateWorkout,
 } from '../lib/workouts'
 
 const RACE_DATE = new Date(2026, 6, 18) // July 18, 2026 (month is 0-indexed)
@@ -20,24 +22,314 @@ function getGreeting() {
 }
 
 const DISCIPLINES = [
-  { id: 'swim',     label: 'Swim',  emoji: '🏊', color: '#A8E6CF', dark: '#2D8B6F', bg: '#E8FAF3' },
-  { id: 'bike',     label: 'Bike',  emoji: '🚴', color: '#C9B8F0', dark: '#6B4FBB', bg: '#F2EEFF' },
-  { id: 'run',      label: 'Run',   emoji: '🏃', color: '#FFD4A8', dark: '#C47A2B', bg: '#FFF4E8' },
-  { id: 'strength', label: 'Lift',  emoji: '💪', color: '#FFF3A8', dark: '#B8960A', bg: '#FFFBE8' },
-  { id: 'climb',    label: 'Climb', emoji: '🧗', color: '#FFB8C6', dark: '#C4354F', bg: '#FFE8EE' },
+  { id: 'swim',     label: 'Swim',     emoji: '🏊', color: '#A8E6CF', dark: '#2D8B6F', bg: '#E8FAF3' },
+  { id: 'bike',     label: 'Bike',     emoji: '🚴', color: '#C9B8F0', dark: '#6B4FBB', bg: '#F2EEFF' },
+  { id: 'run',      label: 'Run',      emoji: '🏃', color: '#FFD4A8', dark: '#C47A2B', bg: '#FFF4E8' },
+  { id: 'strength', label: 'Lift',     emoji: '💪', color: '#FFF3A8', dark: '#B8960A', bg: '#FFFBE8' },
+  { id: 'climb',    label: 'Climb',    emoji: '🧗', color: '#FFB8C6', dark: '#C4354F', bg: '#FFE8EE' },
+  { id: 'recover',  label: 'Recovery', emoji: '🌿', color: '#B8F0E0', dark: '#1A7A5E', bg: '#E8FAF3' },
 ]
 
 // Weekly session goals per discipline
 const WEEKLY_GOALS = { swim: 2, bike: 2, run: 1, strength: 1, climb: 1 }
 
+// ── WORKOUT DETAIL SHEET ─────────────────────────────────────────────────────
+function WorkoutSheet({ workout, onClose, onDeleted, onUpdated }) {
+  const dc = DISCIPLINES.find(d => d.id === workout.discipline)
+          ?? { color: '#F4D0DC', dark: '#C077A0', bg: '#FFF0F5', emoji: '🏅', label: workout.discipline }
+
+  const [editing,    setEditing]    = useState(false)
+  const [duration,   setDuration]   = useState(workout.duration_minutes ?? 0)
+  const [effort,     setEffort]     = useState(workout.effort ?? 5)
+  const [notes,      setNotes]      = useState(workout.notes ?? '')
+  const [distance,   setDistance]   = useState(workout.details?.distance ?? 0)
+  const [footPain,   setFootPain]   = useState(workout.details?.footPain ?? false)
+  const [saving,     setSaving]     = useState(false)
+  const [deleting,   setDeleting]   = useState(false)
+  const [confirmDel, setConfirmDel] = useState(false)
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      const newDetails = { ...workout.details }
+      if (['swim', 'bike', 'run'].includes(workout.discipline)) newDetails.distance = distance || null
+      if (workout.discipline === 'run') newDetails.footPain = footPain
+      const updated = await updateWorkout(workout.id, {
+        duration: duration || null,
+        effort,
+        notes:    notes || null,
+        details:  newDetails,
+      })
+      onUpdated(updated)
+      setEditing(false)
+    } catch (err) {
+      console.error('Update failed:', err)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!confirmDel) { setConfirmDel(true); return }
+    setDeleting(true)
+    try {
+      await deleteWorkout(workout.id)
+      onDeleted(workout.id)
+    } catch (err) {
+      console.error('Delete failed:', err)
+      setDeleting(false)
+    }
+  }
+
+  // Build detail rows for view mode
+  const d    = workout.details ?? {}
+  const rows = []
+  switch (workout.discipline) {
+    case 'swim':
+      if (d.distance)             rows.push(['Distance', `${d.distance}m`])
+      if (d.focus)                rows.push(['Focus', d.focus])
+      if (d.location)             rows.push(['Location', d.location])
+      if (workout.duration_minutes) rows.push(['Duration', `${workout.duration_minutes} min`])
+      break
+    case 'bike':
+      if (workout.duration_minutes) rows.push(['Duration', `${workout.duration_minutes} min`])
+      if (d.type)                 rows.push(['Type', d.type])
+      if (d.distance)             rows.push(['Distance', `${d.distance}km`])
+      if (d.location)             rows.push(['Location', d.location])
+      break
+    case 'run':
+      if (d.distance)             rows.push(['Distance', `${d.distance}km`])
+      if (workout.duration_minutes) rows.push(['Duration', `${workout.duration_minutes} min`])
+      if (d.surface)              rows.push(['Surface', d.surface])
+      if (d.footPain)             rows.push(['Modified', '⚠️ Foot pain flagged'])
+      break
+    case 'strength':
+      if (workout.duration_minutes) rows.push(['Duration', `${workout.duration_minutes} min`])
+      if (d.focus?.length)        rows.push(['Focus', d.focus.join(', ')])
+      if (d.exercises?.length)    rows.push(['Exercises', `${d.exercises.length} logged`])
+      break
+    case 'climb':
+      if (d.location)             rows.push(['Location', d.location])
+      if (d.routes?.length)       rows.push(['Routes', `${d.routes.length} logged`])
+      break
+    case 'recover':
+      if (d.types?.length)        rows.push(['Types', d.types.join(', ')])
+      break
+  }
+  if (workout.effort) rows.push(['Effort', `${workout.effort}/10`])
+  if (workout.notes)  rows.push(['Notes', workout.notes])
+
+  const dateStr = new Date(workout.date + 'T12:00:00')
+    .toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+
+  return (
+    <>
+      {/* Backdrop */}
+      <div style={sh.backdrop} onClick={onClose} />
+
+      {/* Sheet */}
+      <div style={sh.sheet}>
+        <div style={sh.handle} />
+
+        {/* Header */}
+        <div style={sh.header}>
+          <div style={{ ...sh.badge, background: dc.color }}>{dc.emoji}</div>
+          <div style={{ flex: 1 }}>
+            <div style={{ ...sh.sheetTitle, color: dc.dark }}>{dc.label}</div>
+            <div style={sh.sheetDate}>{dateStr}</div>
+          </div>
+          <button style={sh.closeBtn} onClick={onClose}>×</button>
+        </div>
+
+        {!editing ? (
+          <>
+            {/* Detail rows */}
+            <div style={sh.rows}>
+              {rows.map(([label, val]) => (
+                <div key={label} style={sh.row}>
+                  <span style={sh.rowLabel}>{label}</span>
+                  <span style={sh.rowVal}>{val}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Strength exercises breakdown */}
+            {workout.discipline === 'strength' && d.exercises?.length > 0 && (
+              <div style={sh.subSection}>
+                <div style={sh.subLabel}>Exercises</div>
+                {d.exercises.map((ex, i) => (
+                  <div key={i} style={sh.subRow}>
+                    <span style={sh.subName}>{ex.name}</span>
+                    <span style={sh.subDetail}>
+                      {ex.sets}×{ex.reps}{ex.weight ? ` @ ${ex.weight}lb` : ''}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Climb routes breakdown */}
+            {workout.discipline === 'climb' && d.routes?.length > 0 && (
+              <div style={sh.subSection}>
+                <div style={sh.subLabel}>Routes</div>
+                {d.routes.map((r, i) => (
+                  <div key={i} style={sh.subRow}>
+                    <span style={sh.subName}>{r.grade}</span>
+                    <span style={sh.subDetail}>
+                      {r.attempts} attempt{r.attempts !== 1 ? 's' : ''} · {r.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div style={sh.actions}>
+              <button style={sh.editBtn} onClick={() => { setEditing(true); setConfirmDel(false) }}>
+                Edit
+              </button>
+              <button
+                style={{ ...sh.deleteBtn, background: confirmDel ? '#C4354F' : '#FFE8EE', color: confirmDel ? '#fff' : '#C4354F' }}
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting…' : confirmDel ? 'Tap again to confirm' : 'Delete'}
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Edit mode */}
+            <div style={sh.editFields}>
+
+              {workout.discipline !== 'climb' && (
+                <div style={sh.editRow}>
+                  <span style={sh.editLabel}>Duration</span>
+                  <div style={sh.editInputWrap}>
+                    <input
+                      type="number" style={sh.editInput} min="0"
+                      value={duration}
+                      onChange={e => setDuration(parseInt(e.target.value) || 0)}
+                    />
+                    <span style={sh.editUnit}>min</span>
+                  </div>
+                </div>
+              )}
+
+              {['swim', 'bike', 'run'].includes(workout.discipline) && (
+                <div style={sh.editRow}>
+                  <span style={sh.editLabel}>Distance</span>
+                  <div style={sh.editInputWrap}>
+                    <input
+                      type="number" style={sh.editInput} min="0" step="0.1"
+                      value={distance}
+                      onChange={e => setDistance(parseFloat(e.target.value) || 0)}
+                    />
+                    <span style={sh.editUnit}>{workout.discipline === 'swim' ? 'm' : 'km'}</span>
+                  </div>
+                </div>
+              )}
+
+              <div style={sh.editRow}>
+                <span style={sh.editLabel}>Effort</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <button style={sh.stepBtn} onClick={() => setEffort(e => Math.max(1, e - 1))}>−</button>
+                  <span style={sh.stepVal}>{effort}</span>
+                  <button style={sh.stepBtn} onClick={() => setEffort(e => Math.min(10, e + 1))}>+</button>
+                  <span style={{ fontSize: 11, color: '#C077A0' }}>/10</span>
+                </div>
+              </div>
+
+              {workout.discipline === 'run' && (
+                <div style={sh.editRow}>
+                  <span style={sh.editLabel}>Modified</span>
+                  <button
+                    style={{ ...sh.footBtn, background: footPain ? '#FFE8EE' : '#FFF5F8', border: `1.5px solid ${footPain ? '#C4354F' : '#F4C0D0'}`, color: footPain ? '#C4354F' : '#B8A0B0' }}
+                    onClick={() => setFootPain(f => !f)}
+                  >
+                    {footPain ? '⚠️ Foot pain flagged' : 'No foot pain'}
+                  </button>
+                </div>
+              )}
+
+              <div style={{ marginTop: 4 }}>
+                <div style={sh.editLabel}>Notes</div>
+                <textarea
+                  style={sh.editTextarea}
+                  value={notes}
+                  onChange={e => setNotes(e.target.value)}
+                  placeholder="Add notes…"
+                />
+              </div>
+            </div>
+
+            <div style={sh.actions}>
+              <button style={sh.cancelBtn} onClick={() => setEditing(false)}>Cancel</button>
+              <button
+                style={{ ...sh.saveBtn, opacity: saving ? 0.6 : 1 }}
+                onClick={handleSave}
+                disabled={saving}
+              >
+                {saving ? 'Saving…' : 'Save changes'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </>
+  )
+}
+
+// ── SHEET STYLES ─────────────────────────────────────────────────────────────
+const sh = {
+  backdrop:    { position: 'absolute', inset: 0, background: 'rgba(139,26,74,0.3)', backdropFilter: 'blur(2px)', zIndex: 50 },
+  sheet:       { position: 'absolute', bottom: 0, left: 0, right: 0, background: '#FFF8FB', borderRadius: '22px 22px 0 0', padding: '12px 20px 36px', zIndex: 51, boxShadow: '0 -6px 32px rgba(194,24,91,0.15)', maxHeight: '85%', overflowY: 'auto' },
+  handle:      { width: 40, height: 5, background: '#F4C0D0', borderRadius: 3, margin: '0 auto 16px' },
+  header:      { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 },
+  badge:       { width: 44, height: 44, borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 },
+  sheetTitle:  { fontSize: 18, fontWeight: 900 },
+  sheetDate:   { fontSize: 11, color: '#C077A0', fontWeight: 600, marginTop: 1 },
+  closeBtn:    { width: 28, height: 28, borderRadius: 8, background: '#F9D0DF', border: 'none', fontSize: 18, color: '#C2185B', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', flexShrink: 0 },
+
+  rows:        { display: 'flex', flexDirection: 'column', marginBottom: 12 },
+  row:         { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '9px 0', borderBottom: '1px solid #F9D0DF' },
+  rowLabel:    { fontSize: 12, fontWeight: 700, color: '#C077A0', flexShrink: 0 },
+  rowVal:      { fontSize: 13, fontWeight: 700, color: '#3A2040', textAlign: 'right', marginLeft: 16 },
+
+  subSection:  { marginBottom: 14 },
+  subLabel:    { fontSize: 10, fontWeight: 800, color: '#C077A0', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 4 },
+  subRow:      { display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #F9D0DF' },
+  subName:     { fontSize: 12, fontWeight: 700, color: '#3A2040' },
+  subDetail:   { fontSize: 12, color: '#C077A0', fontWeight: 600 },
+
+  actions:     { display: 'flex', gap: 10, marginTop: 20 },
+  editBtn:     { flex: 1, background: '#FFF0F5', border: '1.5px solid #F4C0D0', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, color: '#C2185B', cursor: 'pointer', fontFamily: 'inherit' },
+  deleteBtn:   { flex: 1, border: 'none', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s' },
+
+  editFields:  { display: 'flex', flexDirection: 'column' },
+  editRow:     { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F9D0DF' },
+  editLabel:   { fontSize: 12, fontWeight: 700, color: '#C077A0' },
+  editInputWrap: { display: 'flex', alignItems: 'center', gap: 6 },
+  editInput:   { width: 72, background: '#FFF0F5', border: '1.5px solid #F4C0D0', borderRadius: 10, padding: '6px 10px', fontSize: 16, fontWeight: 800, color: '#8B1A4A', textAlign: 'center', outline: 'none', fontFamily: 'inherit' },
+  editUnit:    { fontSize: 12, color: '#C077A0', fontWeight: 700 },
+  editTextarea:{ width: '100%', minHeight: 70, background: '#FFF5F8', border: '1.5px solid #F4C0D0', borderRadius: 12, padding: '10px 12px', fontSize: 13, color: '#5A3050', fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box', marginTop: 8 },
+  stepBtn:     { width: 28, height: 28, borderRadius: 8, background: '#F9D0DF', border: '1.5px solid #F4A7B9', fontSize: 17, fontWeight: 900, color: '#C2185B', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit' },
+  stepVal:     { fontSize: 18, fontWeight: 900, color: '#8B1A4A', minWidth: 28, textAlign: 'center' },
+  footBtn:     { borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' },
+  cancelBtn:   { flex: 1, background: 'transparent', border: '1.5px solid #F4C0D0', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, color: '#C077A0', cursor: 'pointer', fontFamily: 'inherit' },
+  saveBtn:     { flex: 1.5, background: 'linear-gradient(135deg, #F48FB1, #E91E8C)', border: 'none', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 12px rgba(233,30,140,0.3)' },
+}
+
+// ── HOME SCREEN ───────────────────────────────────────────────────────────────
 export default function Home() {
   const navigate = useNavigate()
 
-  const [daysLeft,          setDaysLeft]          = useState(0)
-  const [weekWorkouts,      setWeekWorkouts]      = useState([])
-  const [recentWorkouts,    setRecentWorkouts]    = useState([])
-  const [loading,           setLoading]           = useState(true)
-  const [fetchError,        setFetchError]        = useState(false)
+  const [daysLeft,        setDaysLeft]        = useState(0)
+  const [weekWorkouts,    setWeekWorkouts]    = useState([])
+  const [recentWorkouts,  setRecentWorkouts]  = useState([])
+  const [loading,         setLoading]         = useState(true)
+  const [fetchError,      setFetchError]      = useState(false)
+  const [selectedWorkout, setSelectedWorkout] = useState(null)
 
   useEffect(() => {
     // Compare date-only (no time) so the count is always whole days
@@ -84,7 +376,19 @@ export default function Home() {
     }
   }, [])
 
-  const weekData = DISCIPLINES.map(d => ({
+  function handleDeleted(id) {
+    setRecentWorkouts(prev => prev.filter(w => w.id !== id))
+    setWeekWorkouts(prev => prev.filter(w => w.id !== id))
+    setSelectedWorkout(null)
+  }
+
+  function handleUpdated(updated) {
+    setRecentWorkouts(prev => prev.map(w => w.id === updated.id ? updated : w))
+    setWeekWorkouts(prev => prev.map(w => w.id === updated.id ? updated : w))
+    setSelectedWorkout(updated)
+  }
+
+  const weekData = DISCIPLINES.slice(0, 5).map(d => ({
     id:   d.id,
     done: weekWorkouts.filter(w => w.discipline === d.id).length,
     goal: WEEKLY_GOALS[d.id] ?? 2,
@@ -181,6 +485,7 @@ export default function Home() {
                 key={w.id ?? i}
                 style={{ ...s.recentCard, borderLeft: `4px solid ${dc.color}` }}
                 className="recent-card"
+                onClick={() => setSelectedWorkout(w)}
               >
                 <div style={{ ...s.recentEmojiBadge, background: dc.color }}>
                   {getDiscEmoji(w.discipline)}
@@ -199,6 +504,16 @@ export default function Home() {
 
         <div style={{ height: 24 }} />
       </div>
+
+      {/* WORKOUT DETAIL SHEET */}
+      {selectedWorkout && (
+        <WorkoutSheet
+          workout={selectedWorkout}
+          onClose={() => setSelectedWorkout(null)}
+          onDeleted={handleDeleted}
+          onUpdated={handleUpdated}
+        />
+      )}
     </div>
   )
 }
@@ -298,6 +613,7 @@ const s = {
     background: '#fff', borderRadius: 14, padding: '12px 14px',
     display: 'flex', alignItems: 'center', gap: 12,
     boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+    cursor: 'pointer',
   },
   recentEmojiBadge: {
     width: 38, height: 38, borderRadius: 10,
@@ -309,7 +625,6 @@ const s = {
   recentTime:   { fontSize: 10, color: '#C077A0', fontWeight: 600, flexShrink: 0 },
   emptyState:   { textAlign: 'center', color: '#D4B0C0', fontSize: 13, fontWeight: 600, padding: '20px 0' },
   errorState:   { textAlign: 'center', color: '#C4354F', fontSize: 12, fontWeight: 600, padding: '20px 0', lineHeight: 1.5 },
-
 }
 
 const css = `

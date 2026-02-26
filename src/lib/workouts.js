@@ -154,6 +154,23 @@ export async function saveWorkout({ discipline, duration, effort, details, notes
   return data
 }
 
+export async function deleteWorkout(id) {
+  const { error } = await supabase.from('workouts').delete().eq('id', id)
+  if (error) throw error
+}
+
+export async function updateWorkout(id, { duration, effort, notes, details }) {
+  const fields = {}
+  if (duration !== undefined) fields.duration_minutes = duration
+  if (effort   !== undefined) fields.effort = effort
+  if (notes    !== undefined) fields.notes = notes
+  if (details  !== undefined) fields.details = details
+  const { data, error } = await supabase
+    .from('workouts').update(fields).eq('id', id).select().single()
+  if (error) throw error
+  return data
+}
+
 // ── Formatters ───────────────────────────────────────────────────────────────
 
 const DISC_EMOJI = {
