@@ -27,7 +27,11 @@ export default async function handler(req, res) {
 
   const openaiKey = process.env.OPENAI_API_KEY
   if (!openaiKey) {
-    return res.status(500).json({ error: 'Server configuration error: missing API key' })
+    // Temporary debug: list env var keys (no values) to diagnose Vercel scoping
+    const allKeys = Object.keys(process.env)
+      .filter(k => !['PATH','HOME','USER','SHELL','TERM','LANG','PWD','SHLVL','_'].includes(k))
+      .sort().join(', ')
+    return res.status(500).json({ error: `OPENAI_API_KEY missing. Env keys: [${allKeys}]` })
   }
 
   // Cap input length to prevent token abuse
