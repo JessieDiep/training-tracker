@@ -29,28 +29,32 @@ export default async function handler(req, res) {
   const safeMessage = message.trim().slice(0, 500)
 
   // ── Fetch recent workouts from Supabase ────────────────────────────────────
-  const supabase = createClient(
-    process.env.SUPABASE_URL,
-    process.env.SUPABASE_ANON_KEY
-  )
+  // Support both plain and VITE_-prefixed names — Vercel exposes all env vars to
+  // serverless functions; the VITE_ prefix only matters to the Vite frontend bundler
+  const supabaseUrl = process.env.SUPABASE_URL ?? process.env.VITE_SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_ANON_KEY ?? process.env.VITE_SUPABASE_ANON_KEY
 
-  const since = new Date()
-  since.setDate(since.getDate() - 28) // 4 weeks of context
-  const sinceStr = since.toISOString().split('T')[0]
-
-  const { data: recentWorkouts, error: dbError } = await supabase
-    .from('workouts')
-    .select('date, discipline, duration_minutes, effort, details, notes')
-    .gte('date', sinceStr)
-    .order('date', { ascending: false })
-    .limit(40)
-
-  if (dbError) {
-    console.error('Supabase error:', dbError)
-    // Non-fatal — continue with empty list
+  let recentWorkouts = []
+  if (supabaseUrl && supabaseKey) {
+    try {
+      const supabase = createClient(supabaseUrl, supabaseKey)
+      const since = new Date()
+      since.setDate(since.getDate() - 28) // 4 weeks of context
+      const sinceStr = since.toISOString().split('T')[0]
+      const { data, error: dbError } = await supabase
+        .from('workouts')
+        .select('date, discipline, duration_minutes, effort, details, notes')
+        .gte('date', sinceStr)
+        .order('date', { ascending: false })
+        .limit(40)
+      if (dbError) console.error('Supabase error:', dbError)
+      else recentWorkouts = data ?? []
+    } catch (e) {
+      console.error('Supabase init error:', e)
+    }
   }
 
-  const workoutSummary = (recentWorkouts ?? []).map(w => {
+  const workoutSummary = recentWorkouts.map(w => {
     const d = w.details ?? {}
     let detail = ''
     switch (w.discipline) {
