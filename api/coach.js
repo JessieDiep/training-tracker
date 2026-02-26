@@ -27,7 +27,19 @@ module.exports = async function handler(req, res) {
 
   const openaiKey = process.env.OPENAI_API_KEY
   if (!openaiKey) {
-    return res.status(500).json({ error: 'Server configuration error: missing API key' })
+    // Debug: show ALL custom env var keys (exclude standard system vars)
+    const customKeys = Object.keys(process.env).filter(k =>
+      !k.startsWith('AWS_') && !k.startsWith('VERCEL_') && !k.startsWith('NODE') &&
+      !['TZ','PATH','HOME','PWD','LANG','SHELL','SHLVL','_','LD_LIBRARY_PATH','NOW_REGION',
+        'NX_DAEMON','TURBO_CACHE','TURBO_DOWNLOAD_LOCAL_ENABLED','TURBO_PLATFORM_ENV',
+        'TURBO_REMOTE_ONLY','TURBO_RUN_SUMMARY'].includes(k)
+    ).sort()
+    return res.status(500).json({
+      error: 'missing API key',
+      customEnvKeys: customKeys,
+      nodeVersion: process.version,
+      moduleType: typeof require !== 'undefined' ? 'commonjs' : 'esm'
+    })
   }
 
   // Cap input length to prevent token abuse
