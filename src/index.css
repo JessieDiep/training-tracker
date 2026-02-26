@@ -65,9 +65,9 @@ body {
 }
 
 /* Safe area padding for iPhone notch / Dynamic Island */
+/* padding-bottom is handled inside BottomNav — don't add it here or it doubles up */
 .pwa-phone {
   padding-top: env(safe-area-inset-top);
-  padding-bottom: env(safe-area-inset-bottom);
 }
 
 /* Routes wrapper fills remaining height */

@@ -11,6 +11,14 @@ import {
 
 const RACE_DATE = new Date(2026, 6, 18) // July 18, 2026 (month is 0-indexed)
 
+function getGreeting() {
+  const h = new Date().getHours()
+  if (h >= 5  && h < 12) return { heading: 'Good morning, Jess', sub: "Let's get it" }
+  if (h >= 12 && h < 17) return { heading: 'Good afternoon, Jess', sub: 'Keep the momentum going' }
+  if (h >= 17 && h < 21) return { heading: 'Good evening, Jess', sub: 'End the day strong' }
+  return { heading: 'Hey Jess', sub: 'Rest is training too' }
+}
+
 const DISCIPLINES = [
   { id: 'swim',     label: 'Swim',  emoji: '🏊', color: '#A8E6CF', dark: '#2D8B6F', bg: '#E8FAF3' },
   { id: 'bike',     label: 'Bike',  emoji: '🚴', color: '#C9B8F0', dark: '#6B4FBB', bg: '#F2EEFF' },
@@ -89,8 +97,8 @@ export default function Home() {
       {/* ── HEADER ── */}
       <div style={s.header}>
         <div>
-          <div style={s.headerGreeting}>Good morning, Jess</div>
-          <div style={s.headerSub}>Let's get it</div>
+          <div style={s.headerGreeting}>{getGreeting().heading}</div>
+          <div style={s.headerSub}>{getGreeting().sub}</div>
         </div>
       </div>
 
