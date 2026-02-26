@@ -1,0 +1,135 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Nunito', system-ui, sans-serif;
+  background: linear-gradient(135deg, #FFE8F0 0%, #F8E8FF 50%, #E8F4FF 100%);
+  overscroll-behavior: none;
+}
+
+::-webkit-scrollbar {
+  display: none;
+}
+
+/* ── PWA shell: phone-frame on desktop, full-screen on mobile ── */
+.pwa-shell {
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+}
+
+.pwa-phone {
+  width: 375px;
+  height: 780px;
+  background: #FFF8FB;
+  border-radius: 44px;
+  box-shadow:
+    0 32px 80px rgba(194, 24, 91, 0.18),
+    0 8px 24px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(244, 167, 185, 0.4);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+/* On real mobile / installed PWA: go full-screen */
+@media (max-width: 500px) {
+  .pwa-shell {
+    padding: 0;
+    background: #FFF8FB;
+    align-items: flex-start;
+  }
+  .pwa-phone {
+    width: 100vw;
+    width: 100dvw;
+    height: 100vh;
+    height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+    border: none;
+  }
+}
+
+/* Safe area padding for iPhone notch / Dynamic Island */
+.pwa-phone {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Routes wrapper fills remaining height */
+.routes-wrapper {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ── UI Kit: 9-slice buttons ── */
+/* button_roundsquare_1.svg: 64x64 rounded rect rx=16. Slice = 16px. */
+.uikit-btn-primary {
+  border-image: url('/ui-kit/Buttons/button_roundsquare_1.svg') 16 fill / 16px stretch;
+  border-width: 16px;
+  /* The SVG shape is cream (#fff9f7); gradient is applied via background on the label */
+}
+
+/* button_roundsquare_border.svg for outline variant */
+.uikit-btn-outline {
+  border-image: url('/ui-kit/Buttons/button_roundsquare_border.svg') 16 fill / 16px stretch;
+  border-width: 16px;
+  background: transparent;
+}
+
+/* ── UI Kit: progress bars ── */
+/* bar_backgroundsoft_1.svg: 48x41, rx=20. Slice = 20px. */
+.uikit-bar-track {
+  border-image: url('/ui-kit/Progress Bars/bar_backgroundsoft_1.svg') 20 fill / 20px 20px stretch;
+  background-clip: padding-box;
+}
+
+/* bar_fill_1.svg: 48x41, rx=20 — used as the fill colour shape */
+.uikit-bar-fill {
+  border-image: url('/ui-kit/Progress Bars/bar_fill_1.svg') 20 fill / 20px 20px stretch;
+}
+
+/* ── UI Kit: text bubbles ── */
+/* textbubble_roundsquare.svg used as background for AI chat bubbles */
+.uikit-bubble-ai {
+  background-image: url('/ui-kit/UI Icons/textbubble_roundsquare.svg');
+  background-size: 100% 100%;
+}
+
+/* ── Shared animations ── */
+@keyframes pop {
+  0%   { transform: scale(0.4); opacity: 0; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+@keyframes bounce {
+  0%, 60%, 100% { transform: translateY(0);    }
+  30%           { transform: translateY(-5px); }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+.pop-anim     { animation: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.fade-in-up   { animation: fadeInUp 0.3s ease both; }
+
+.dot1 { animation: bounce 1.2s ease-in-out infinite 0s; }
+.dot2 { animation: bounce 1.2s ease-in-out infinite 0.2s; }
+.dot3 { animation: bounce 1.2s ease-in-out infinite 0.4s; }

@@ -1,0 +1,7 @@
+<svg id="button_roundsquare_border_6" xmlns="http://www.w3.org/2000/svg" width="64" height="76" viewBox="0 0 64 76">
+  <g id="button_roundsquare_line_1" fill="#6a9c20" stroke="#5e2a3b" stroke-linejoin="round" stroke-width="8">
+    <rect width="64" height="76" rx="24" stroke="none"/>
+    <rect x="4" y="4" width="56" height="68" rx="20" fill="none"/>
+  </g>
+  <rect id="button_roundsquare_line_1-2" data-name="button_roundsquare_line_1" width="48" height="48" rx="16" transform="translate(8 8)" fill="#c2f47e"/>
+</svg>

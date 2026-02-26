@@ -1,0 +1,7 @@
+<svg id="base_roundsquare_bars_2" xmlns="http://www.w3.org/2000/svg" width="128" height="64" viewBox="0 0 128 64">
+  <g id="base_roundsquare_line" fill="#ffd258" stroke="#5e2a3b" stroke-width="8">
+    <path d="M40,0H88a40,40,0,0,1,40,40V64a0,0,0,0,1,0,0H0a0,0,0,0,1,0,0V40A40,40,0,0,1,40,0Z" stroke="none"/>
+    <path d="M40,4H88a36,36,0,0,1,36,36V56a4,4,0,0,1-4,4H8a4,4,0,0,1-4-4V40A36,36,0,0,1,40,4Z" fill="none"/>
+  </g>
+  <rect id="Rectángulo_4" data-name="Rectángulo 4" width="112" height="8" transform="translate(8 56)" fill="#ffc042"/>
+</svg>
