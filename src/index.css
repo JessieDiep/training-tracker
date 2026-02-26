@@ -48,6 +48,11 @@ body {
 
 /* On real mobile / installed PWA: go full-screen */
 @media (max-width: 500px) {
+  /* White body ensures the Safari toolbar area (below the viewport on initial
+     load) matches the nav colour, making any gap visually invisible */
+  html, body {
+    background: #fff;
+  }
   .pwa-shell {
     padding: 0;
     background: #FFF8FB;

@@ -195,14 +195,15 @@ export default function Coach() {
         }),
       })
 
-      if (!res.ok) throw new Error(`API error ${res.status}`)
-      const { reply } = await res.json()
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error ?? `HTTP ${res.status}`)
+      if (!data.reply) throw new Error('Empty reply from server')
 
-      setMessages(prev => [...prev, { role: 'ai', text: reply, time: nowStr() }])
+      setMessages(prev => [...prev, { role: 'ai', text: data.reply, time: nowStr() }])
     } catch (err) {
       setMessages(prev => [...prev, {
         role: 'ai',
-        text: "Sorry, I couldn't connect right now. Check your OpenAI API key in Vercel env vars.",
+        text: `Error: ${err.message}`,
         time: nowStr(),
       }])
     } finally {
