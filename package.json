@@ -7,16 +7,18 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "setup": "node scripts/copy-ui-kit.mjs"
+    "setup": "node scripts/copy-ui-kit.mjs",
+    "gen-icons": "node scripts/gen-icons.mjs"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.46.2",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.28.0",
-    "@supabase/supabase-js": "^2.46.2"
+    "react-router-dom": "^6.28.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
+    "sharp": "^0.34.5",
     "vite": "^6.0.7",
     "vite-plugin-pwa": "^0.21.1"
   }
