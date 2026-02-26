@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getWeeklyVolumeData, getThisWeekWorkouts, getLastWeekWorkouts, getClimbSends } from '../lib/workouts'
+import { getWeeklyVolumeData, getThisWeekWorkouts, getLastWeekWorkouts, getClimbSends, getTriWorkouts } from '../lib/workouts'
 
 // Grade → colour mapping (easiest → hardest)
 const GRADE_COLORS = {
@@ -28,6 +28,42 @@ const DISC_CONFIG = {
   run:      { label: 'Run',      emoji: '🏃', color: '#FFD4A8', dark: '#C47A2B', bg: '#FFF4E8', unit: 'km'       },
   strength: { label: 'Strength', emoji: '💪', color: '#FFF3A8', dark: '#B8960A', bg: '#FFFBE8', unit: 'sessions' },
   climb:    { label: 'Climb',    emoji: '🧗', color: '#FFB8C6', dark: '#C4354F', bg: '#FFE8EE', unit: 'sessions' },
+}
+
+// ── PERSONAL BESTS ────────────────────────────────────────────────────────────
+
+const PB_DISTS = {
+  swim: [100, 200, 300, 400, 500],
+  bike: [5, 10, 15, 20, 25],
+  run:  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+}
+const RACE_DIST = { swim: 500, bike: 25, run: 5 }
+
+function formatTime(minutes) {
+  const totalSecs = Math.round(minutes * 60)
+  const h = Math.floor(totalSecs / 3600)
+  const m = Math.floor((totalSecs % 3600) / 60)
+  const s = totalSecs % 60
+  if (h > 0) return `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+  return `${m}:${String(s).padStart(2, '0')}`
+}
+
+function computePBs(workouts) {
+  const pbs = { swim: {}, bike: {}, run: {} }
+  for (const w of workouts) {
+    const distance = w.details?.distance
+    const duration = w.duration_minutes
+    if (!distance || !duration || distance <= 0 || duration <= 0) continue
+    const pace = duration / distance   // min per metre (swim) or min per km (bike/run)
+    for (const target of PB_DISTS[w.discipline] ?? []) {
+      if (target > distance) continue  // never extrapolate
+      const time = pace * target
+      if (!pbs[w.discipline][target] || time < pbs[w.discipline][target]) {
+        pbs[w.discipline][target] = time
+      }
+    }
+  }
+  return pbs
 }
 
 // ── MINI BAR CHART ────────────────────────────────────────────────────────────
@@ -120,10 +156,12 @@ function ClimbChart({ data }) {
 export default function Progress() {
   const [activeDisc,  setActiveDisc]  = useState('swim')
   const [activeWeek,  setActiveWeek]  = useState(null)
+  const [activePBDisc,setActivePBDisc]= useState('swim')
   const [volumeData,  setVolumeData]  = useState(null)
   const [thisWeek,    setThisWeek]    = useState({})
   const [lastWeek,    setLastWeek]    = useState({})
   const [climbSends,  setClimbSends]  = useState({})
+  const [pbs,         setPbs]         = useState({ swim: {}, bike: {}, run: {} })
   const [loading,     setLoading]     = useState(true)
 
   useEffect(() => {
@@ -132,9 +170,11 @@ export default function Progress() {
       getThisWeekWorkouts(),
       getLastWeekWorkouts(),
       getClimbSends(),
-    ]).then(([vol, thisW, lastW, sends]) => {
+      getTriWorkouts(),
+    ]).then(([vol, thisW, lastW, sends, triW]) => {
       setVolumeData(vol)
       setClimbSends(sends)
+      setPbs(computePBs(triW))
       const summarise = (workouts) => ({
         swim:     workouts.filter(w => w.discipline === 'swim').reduce((s, w) => s + (w.details?.distance || 0), 0),
         bike:     workouts.filter(w => w.discipline === 'bike').reduce((s, w) => s + (w.duration_minutes || 0), 0),
@@ -266,6 +306,50 @@ export default function Progress() {
           })()}
         </div>
 
+        {/* ── PERSONAL BESTS ── */}
+        <div style={s.sectionHeader}>
+          <span style={s.sectionTitle}>Personal bests</span>
+          <span style={s.sectionHint}>from logged sessions</span>
+        </div>
+        <div style={s.pbTabs}>
+          {['swim', 'bike', 'run'].map(disc => {
+            const d      = DISC_CONFIG[disc]
+            const active = activePBDisc === disc
+            return (
+              <button key={disc}
+                style={{ ...s.pbTab, background: active ? d.color : 'transparent', border: `1.5px solid ${active ? d.dark : '#F4C0D0'}` }}
+                onClick={() => setActivePBDisc(disc)}>
+                <span>{d.emoji}</span>
+                <span style={{ fontSize: 11, fontWeight: 800, color: active ? d.dark : '#B8A0B0' }}>{d.label}</span>
+              </button>
+            )
+          })}
+        </div>
+        <div style={s.pbCard}>
+          {PB_DISTS[activePBDisc].map(dist => {
+            const dc     = DISC_CONFIG[activePBDisc]
+            const time   = pbs[activePBDisc]?.[dist]
+            const isRace = dist === RACE_DIST[activePBDisc]
+            const unit   = activePBDisc === 'swim' ? 'm' : 'km'
+            return (
+              <div key={dist} style={{ ...s.pbRow, background: isRace ? dc.bg : 'transparent' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ ...s.pbDist, color: isRace ? dc.dark : '#5A3050' }}>
+                    {dist}{unit}
+                  </span>
+                  {isRace && <span style={{ ...s.racePill, background: dc.color, color: dc.dark }}>race</span>}
+                </div>
+                <span style={{ ...s.pbTime, color: time ? dc.dark : '#D4B0C0' }}>
+                  {time ? formatTime(time) : '—'}
+                </span>
+              </div>
+            )
+          })}
+          {Object.keys(pbs[activePBDisc]).length === 0 && (
+            <div style={s.pbEmpty}>Log a {activePBDisc} session with distance to see your bests</div>
+          )}
+        </div>
+
         <div style={{ height: 32 }} />
       </div>
     </div>
@@ -304,6 +388,16 @@ const s = {
   sendBarWrap:{ flex: 1, height: 14, background: '#F4D0DC', borderRadius: 7, overflow: 'hidden' },
   sendBar:    { height: '100%', borderRadius: 7, transition: 'width 0.5s ease' },
   sendCount:  { fontSize: 12, fontWeight: 900, width: 20, textAlign: 'right', flexShrink: 0 },
+
+  sectionHint:{ fontSize: 10, color: '#C0A0B8', fontWeight: 600 },
+  pbTabs:     { display: 'flex', gap: 6, marginBottom: 10 },
+  pbTab:      { flex: 1, height: 38, borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, transition: 'all 0.15s', fontFamily: 'inherit' },
+  pbCard:     { background: '#fff', borderRadius: 16, padding: '4px 14px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', overflow: 'hidden' },
+  pbRow:      { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #F9D0DF', borderRadius: 8, margin: '0 -4px', padding: '10px 4px' },
+  pbDist:     { fontSize: 13, fontWeight: 800 },
+  pbTime:     { fontSize: 15, fontWeight: 900, letterSpacing: -0.3 },
+  racePill:   { fontSize: 9, fontWeight: 800, borderRadius: 6, padding: '2px 6px', letterSpacing: 0.2, textTransform: 'uppercase' },
+  pbEmpty:    { fontSize: 12, color: '#C0A0B8', fontWeight: 600, textAlign: 'center', padding: '16px 0' },
 }
 
 const css = `

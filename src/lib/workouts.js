@@ -154,6 +154,17 @@ export async function saveWorkout({ discipline, duration, effort, details, notes
   return data
 }
 
+/** Fetch all swim/bike/run workouts for personal best calculations. */
+export async function getTriWorkouts() {
+  const { data, error } = await supabase
+    .from('workouts')
+    .select('discipline, duration_minutes, details')
+    .in('discipline', ['swim', 'bike', 'run'])
+    .order('date', { ascending: true })
+  if (error) throw error
+  return data ?? []
+}
+
 export async function deleteWorkout(id) {
   const { error } = await supabase.from('workouts').delete().eq('id', id)
   if (error) throw error
