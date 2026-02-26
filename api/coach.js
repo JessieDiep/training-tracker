@@ -25,11 +25,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'message is required' })
   }
 
-  // Debug: surface env var availability so we can diagnose missing key
   const openaiKey = process.env.OPENAI_API_KEY
   if (!openaiKey) {
-    const available = Object.keys(process.env).filter(k => k.startsWith('OPENAI') || k.startsWith('VITE_')).join(', ')
-    return res.status(500).json({ error: `OPENAI_API_KEY not found. Env keys present: [${available || 'none'}]` })
+    return res.status(500).json({ error: 'Server configuration error: missing API key' })
   }
 
   // Cap input length to prevent token abuse
