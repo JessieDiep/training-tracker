@@ -279,33 +279,6 @@ export default function Progress() {
           )}
         </div>
 
-        {/* ── CLIMBING SENDS ── */}
-        <div style={s.sectionHeader}>
-          <span style={s.sectionTitle}>Climbing sends</span>
-        </div>
-        <div style={s.sendCard}>
-          {Object.keys(climbSends).length === 0 ? (
-            <div style={{ color: '#C0A0B8', fontSize: 12, textAlign: 'center', padding: '8px 0' }}>
-              No sends logged yet
-            </div>
-          ) : (() => {
-            const sorted = Object.keys(climbSends).sort()
-            const max    = Math.max(...Object.values(climbSends), 1)
-            return sorted.map(grade => {
-              const { color, dark } = GRADE_COLORS[grade] ?? { color: '#C9B8F0', dark: '#6B4FBB' }
-              return (
-                <div key={grade} style={s.sendRow}>
-                  <div style={s.sendGrade}>{grade}</div>
-                  <div style={s.sendBarWrap}>
-                    <div style={{ ...s.sendBar, width: `${(climbSends[grade] / max) * 100}%`, background: color }} />
-                  </div>
-                  <div style={{ ...s.sendCount, color: dark }}>{climbSends[grade]}</div>
-                </div>
-              )
-            })
-          })()}
-        </div>
-
         {/* ── PERSONAL BESTS ── */}
         <div style={s.sectionHeader}>
           <span style={s.sectionTitle}>Personal bests</span>
@@ -348,6 +321,33 @@ export default function Progress() {
           {Object.keys(pbs[activePBDisc]).length === 0 && (
             <div style={s.pbEmpty}>Log a {activePBDisc} session with distance to see your bests</div>
           )}
+        </div>
+
+        {/* ── CLIMBING SENDS ── */}
+        <div style={s.sectionHeader}>
+          <span style={s.sectionTitle}>Climbing sends</span>
+        </div>
+        <div style={s.sendCard}>
+          {Object.keys(climbSends).length === 0 ? (
+            <div style={{ color: '#C0A0B8', fontSize: 12, textAlign: 'center', padding: '8px 0' }}>
+              No sends logged yet
+            </div>
+          ) : (() => {
+            const sorted = Object.keys(climbSends).sort()
+            const max    = Math.max(...Object.values(climbSends), 1)
+            return sorted.map(grade => {
+              const { color, dark } = GRADE_COLORS[grade] ?? { color: '#C9B8F0', dark: '#6B4FBB' }
+              return (
+                <div key={grade} style={s.sendRow}>
+                  <div style={s.sendGrade}>{grade}</div>
+                  <div style={s.sendBarWrap}>
+                    <div style={{ ...s.sendBar, width: `${(climbSends[grade] / max) * 100}%`, background: color }} />
+                  </div>
+                  <div style={{ ...s.sendCount, color: dark }}>{climbSends[grade]}</div>
+                </div>
+              )
+            })
+          })()}
         </div>
 
         <div style={{ height: 32 }} />
