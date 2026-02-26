@@ -35,7 +35,7 @@ module.exports = async function handler(req, res) {
         'TURBO_REMOTE_ONLY','TURBO_RUN_SUMMARY'].includes(k)
     ).sort()
     return res.status(500).json({
-      error: 'missing API key',
+      error: `missing API key [region:${process.env.VERCEL_REGION || '?'} env:${process.env.VERCEL_ENV || '?'} target:${process.env.VERCEL_TARGET_ENV || '?'}]`,
       customEnvKeys: customKeys,
       nodeVersion: process.version,
       moduleType: typeof require !== 'undefined' ? 'commonjs' : 'esm'
