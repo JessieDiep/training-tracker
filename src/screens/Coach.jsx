@@ -4,11 +4,11 @@ import { getRecentWorkouts, formatWorkoutDetail, getDiscEmoji, getDiscStyle, for
 const RACE_DATE = new Date(2026, 6, 18)
 
 const PROMPT_CHIPS = [
-  "How's my swim volume looking?",
-  "Am I on track for my race?",
+  "How's my progress looking?",
+  "Am I on track for a sub-2hr sprint triathlon?",
+  "What do you recommend I do next week?",
   "Tips for my foot injury and running",
   "What should I prioritize this week?",
-  "Recovery advice after today's workout",
 ]
 
 const DISC_COLORS = {
@@ -172,17 +172,24 @@ export default function Coach() {
 
   async function send(text) {
     if (!text.trim() || typing) return
-    const userMsg = { role: 'user', text: text.trim(), time: nowStr() }
+    const safeText = text.trim().slice(0, 500)
+    const userMsg = { role: 'user', text: safeText, time: nowStr() }
     setMessages(prev => [...prev, userMsg])
     setInput('')
     setTyping(true)
+
+    // Build history from all non-welcome messages for context
+    const history = messages
+      .filter(m => m.role === 'user' || m.role === 'ai')
+      .map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.text }))
 
     try {
       const res = await fetch('/api/coach', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          message:     text.trim(),
+          message:     safeText,
+          history,
           phase:       'Race Mode',
           injuryFlags: INJURY,
         }),

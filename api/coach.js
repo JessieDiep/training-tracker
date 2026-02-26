@@ -2,22 +2,31 @@ import { createClient } from '@supabase/supabase-js'
 
 /**
  * POST /api/coach
- * Body: { message: string, phase?: string, injuryFlags?: string }
+ * Body: {
+ *   message:     string,           // user's current question (max 500 chars)
+ *   history?:    { role, content }[], // prior turns for context (last ~6)
+ *   phase?:      string,
+ *   injuryFlags?: string,
+ * }
  *
- * 1. Fetches the last 14 days of workouts from Supabase
- * 2. Builds a system prompt with training context
- * 3. Calls gpt-4o and streams the response back
+ * Security notes:
+ * - OPENAI_API_KEY never leaves the server — it is a Vercel env var
+ * - Input is validated and capped before being forwarded
+ * - max_tokens caps per-call cost regardless of input length
  */
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { message, phase = 'Race Mode', injuryFlags = 'None' } = req.body ?? {}
+  const { message, history = [], phase = 'Race Mode', injuryFlags = 'None' } = req.body ?? {}
 
   if (!message?.trim()) {
     return res.status(400).json({ error: 'message is required' })
   }
+
+  // Cap input length to prevent token abuse
+  const safeMessage = message.trim().slice(0, 500)
 
   // ── Fetch recent workouts from Supabase ────────────────────────────────────
   const supabase = createClient(
@@ -26,19 +35,19 @@ export default async function handler(req, res) {
   )
 
   const since = new Date()
-  since.setDate(since.getDate() - 14)
+  since.setDate(since.getDate() - 28) // 4 weeks of context
   const sinceStr = since.toISOString().split('T')[0]
 
   const { data: recentWorkouts, error: dbError } = await supabase
     .from('workouts')
-    .select('date, discipline, duration_minutes, effort, details, notes, mood')
+    .select('date, discipline, duration_minutes, effort, details, notes')
     .gte('date', sinceStr)
     .order('date', { ascending: false })
-    .limit(30)
+    .limit(40)
 
   if (dbError) {
     console.error('Supabase error:', dbError)
-    // Non-fatal — continue with empty workout list
+    // Non-fatal — continue with empty list
   }
 
   const workoutSummary = (recentWorkouts ?? []).map(w => {
@@ -52,32 +61,50 @@ export default async function handler(req, res) {
       case 'climb':    detail = `${(d.routes ?? []).length} routes · ${d.location ?? ''}`; break
       case 'recover':  detail = (d.types ?? []).join(', '); break
     }
-    return `${w.date} — ${w.discipline}${detail ? ` (${detail.trim().replace(/ · $/,'')})` : ''}${w.effort ? ` effort:${w.effort}/10` : ''}`
+    const noteStr = w.notes ? ` [note: ${w.notes}]` : ''
+    return `${w.date} — ${w.discipline}${detail ? ` (${detail.trim().replace(/ · $/, '')})` : ''}${w.effort ? ` effort:${w.effort}/10` : ''}${noteStr}`
   }).join('\n')
 
   const daysToRace = Math.max(
-    Math.ceil((new Date('2025-07-18') - new Date()) / 86400000),
+    Math.ceil((new Date(2026, 6, 18) - new Date()) / 86400000),
     0
   )
 
-  // ── Build system prompt ────────────────────────────────────────────────────
-  const systemPrompt = `You are an expert triathlon coach and personal trainer named "Coach" helping Jess with her training. You are warm, encouraging, and data-driven.
+  // ── System prompt ──────────────────────────────────────────────────────────
+  const systemPrompt = `You are an expert triathlon coach and personal trainer named "Coach" helping Jess with her training. You are warm, encouraging, specific, and data-driven.
 
-Current context:
+ATHLETE PROFILE
+- Name: Jess
+- Race: Sprint Triathlon on July 18, 2026 (${daysToRace} days away)
+- Race goal: Finish in under 2 hours
+- Sprint triathlon distances: 750m swim · 20km bike · 5km run
+- Sub-2hr target splits (rough guide): ~22min swim · ~45min bike · ~30min run · ~8min transitions
 - Training phase: ${phase}
-- Race date: July 18, 2025 (${daysToRace} days away)
 - Active injuries / flags: ${injuryFlags}
+- Weekly session targets: Swim ×2, Bike ×2, Run ×1, Strength ×1, Climb ×1
 
-Recent 14 days of workouts (newest first):
+RECENT TRAINING (last 28 days, newest first):
 ${workoutSummary || '(no workouts logged yet)'}
 
-Coaching guidelines:
-- Be encouraging but realistic. Use Jess's name occasionally.
-- For run sessions, always account for the foot injury when relevant.
-- Aim to balance all five disciplines: swim, bike, run, strength, and climbing.
-- Keep responses concise (3–5 sentences) unless a detailed analysis is requested.
-- Reference specific workout data when it's relevant to the question.
-- If no workouts are logged yet, encourage Jess to start logging and offer motivational advice.`
+COACHING GUIDELINES
+- Be encouraging but realistic. Use Jess's name occasionally (not every message).
+- Always account for the foot injury when discussing run sessions.
+- Reference specific dates and workout data when relevant — don't be vague.
+- Keep responses concise (3–5 sentences) unless a detailed breakdown is explicitly requested.
+- If asked about pacing or race readiness, compare against the sub-2hr target splits above.
+- If no workouts are logged yet, encourage Jess to start logging and offer a first-week plan.`
+
+  // ── Build message array with conversation history ──────────────────────────
+  // Accept up to the last 6 turns (3 user + 3 assistant) to keep token cost bounded
+  const recentHistory = Array.isArray(history)
+    ? history.slice(-6).map(m => ({ role: m.role, content: String(m.content).slice(0, 500) }))
+    : []
+
+  const messages = [
+    { role: 'system',    content: systemPrompt },
+    ...recentHistory,
+    { role: 'user',      content: safeMessage },
+  ]
 
   // ── Call OpenAI ────────────────────────────────────────────────────────────
   const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -87,11 +114,8 @@ Coaching guidelines:
       'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
     },
     body: JSON.stringify({
-      model:       'gpt-4o',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user',   content: message.trim() },
-      ],
+      model:       'gpt-4o-mini',  // cheaper than gpt-4o, more than good enough for coaching Q&A
+      messages,
       max_tokens:  600,
       temperature: 0.7,
     }),
@@ -100,9 +124,7 @@ Coaching guidelines:
   if (!openaiRes.ok) {
     const errBody = await openaiRes.json().catch(() => ({}))
     console.error('OpenAI error:', errBody)
-    return res.status(502).json({
-      error: errBody?.error?.message ?? 'OpenAI API error',
-    })
+    return res.status(502).json({ error: errBody?.error?.message ?? 'OpenAI API error' })
   }
 
   const openaiData = await openaiRes.json()
