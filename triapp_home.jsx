@@ -66,7 +66,7 @@ export default function App() {
         {/* STATUS BAR */}
         <div style={styles.statusBar}>
           <span style={styles.statusTime}>9:41</span>
-          <span style={styles.statusIcons}>●●● 𝗪𝗶-𝗙𝗶 🔋</span>
+          <span style={styles.statusIcons}>●●● 𝗪𝗶-𝗙𝗶</span>
         </div>
 
         {/* SCROLLABLE CONTENT */}
