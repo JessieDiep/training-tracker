@@ -57,16 +57,27 @@ body {
     padding: 0;
     background: #FFF8FB;
   }
-  /* position:fixed + inset:0 pins to the true screen edges, bypassing
-     iOS Safari's unreliable 100dvh calculation that causes bottom gaps */
+  /* top/left/right:0 + fixed height keeps the layout stable when the iOS
+     keyboard opens — avoids using bottom:0 which would cause the phone frame
+     to shrink and the bottom nav to slide up */
   .pwa-phone {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
     width: 100%;
-    height: 100%;
+    height: 100vh;   /* fallback for older iOS */
+    height: 100svh;  /* small viewport height — stable, unaffected by keyboard */
     border-radius: 0;
     box-shadow: none;
     border: none;
+  }
+
+  /* Prevent iOS from auto-zooming when an input/textarea is focused.
+     iOS zooms in whenever font-size < 16px — forcing 16px stops that.
+     The visual size of each field is still controlled by component styles. */
+  input, textarea, select {
+    font-size: 16px !important;
   }
 }
 
