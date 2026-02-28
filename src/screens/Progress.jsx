@@ -524,7 +524,7 @@ const s = {
   pbTabs:     { display: 'flex', gap: 6, marginBottom: 10 },
   pbTab:      { flex: 1, height: 38, borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, transition: 'all 0.15s', fontFamily: 'inherit' },
   pbCard:     { background: '#fff', borderRadius: 16, padding: '4px 14px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', overflow: 'hidden' },
-  pbRow:      { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderBottom: '1px solid #F9D0DF', borderRadius: 8, margin: '0 -4px', padding: '10px 4px' },
+  pbRow:      { display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #F9D0DF', borderRadius: 8, margin: '0 -4px', padding: '10px 4px' },
   pbDist:     { fontSize: 13, fontWeight: 800 },
   pbTime:     { fontSize: 15, fontWeight: 900, letterSpacing: -0.3 },
   racePill:   { fontSize: 9, fontWeight: 800, borderRadius: 6, padding: '2px 6px', letterSpacing: 0.2, textTransform: 'uppercase' },
