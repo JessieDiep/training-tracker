@@ -400,33 +400,6 @@ export default function Progress() {
           )}
         </div>
 
-        {/* ── CLIMBING SENDS ── */}
-        <div style={s.sectionHeader}>
-          <span style={s.sectionTitle}>Climbing sends</span>
-        </div>
-        <div style={s.sendCard}>
-          {Object.keys(climbSends).length === 0 ? (
-            <div style={{ color: '#C0A0B8', fontSize: 12, textAlign: 'center', padding: '8px 0' }}>
-              No sends logged yet
-            </div>
-          ) : (() => {
-            const sorted = Object.keys(climbSends).sort()
-            const max    = Math.max(...Object.values(climbSends), 1)
-            return sorted.map(grade => {
-              const { color, dark } = GRADE_COLORS[grade] ?? { color: '#C9B8F0', dark: '#6B4FBB' }
-              return (
-                <div key={grade} style={s.sendRow}>
-                  <div style={s.sendGrade}>{grade}</div>
-                  <div style={s.sendBarWrap}>
-                    <div style={{ ...s.sendBar, width: `${(climbSends[grade] / max) * 100}%`, background: color }} />
-                  </div>
-                  <div style={{ ...s.sendCount, color: dark }}>{climbSends[grade]}</div>
-                </div>
-              )
-            })
-          })()}
-        </div>
-
         {/* ── STRENGTH PBs ── */}
         {Object.keys(strengthData).length > 0 && (() => {
           const exercises = Object.entries(strengthData)
@@ -457,10 +430,10 @@ export default function Progress() {
                   </div>
                   <div style={s.strengthBest}>
                     <span style={s.strengthBestNum}>~{best.est1RM}</span>
-                    <span style={s.strengthBestUnit}>kg</span>
+                    <span style={s.strengthBestUnit}>lbs</span>
                   </div>
                   <div style={s.strengthBestSub}>
-                    {best.weight}kg × {best.reps} reps ({best.sets} sets)
+                    {best.weight}lbs × {best.reps} reps ({best.sets} sets)
                   </div>
                   {points.length >= 2 && (
                     <>
@@ -480,6 +453,33 @@ export default function Progress() {
             </>
           )
         })()}
+
+        {/* ── CLIMBING SENDS ── */}
+        <div style={s.sectionHeader}>
+          <span style={s.sectionTitle}>Climbing sends</span>
+        </div>
+        <div style={s.sendCard}>
+          {Object.keys(climbSends).length === 0 ? (
+            <div style={{ color: '#C0A0B8', fontSize: 12, textAlign: 'center', padding: '8px 0' }}>
+              No sends logged yet
+            </div>
+          ) : (() => {
+            const sorted = Object.keys(climbSends).sort()
+            const max    = Math.max(...Object.values(climbSends), 1)
+            return sorted.map(grade => {
+              const { color, dark } = GRADE_COLORS[grade] ?? { color: '#C9B8F0', dark: '#6B4FBB' }
+              return (
+                <div key={grade} style={s.sendRow}>
+                  <div style={s.sendGrade}>{grade}</div>
+                  <div style={s.sendBarWrap}>
+                    <div style={{ ...s.sendBar, width: `${(climbSends[grade] / max) * 100}%`, background: color }} />
+                  </div>
+                  <div style={{ ...s.sendCount, color: dark }}>{climbSends[grade]}</div>
+                </div>
+              )
+            })
+          })()}
+        </div>
 
         <div style={{ height: 32 }} />
       </div>
