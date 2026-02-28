@@ -19,9 +19,9 @@ export default function Auth() {
   const [raceName,      setRaceName]      = useState('')
   const [raceDate,      setRaceDate]      = useState('')
   const [raceGoal,      setRaceGoal]      = useState('')
-  const [swimDist,      setSwimDist]      = useState('')
-  const [bikeDist,      setBikeDist]      = useState('')
-  const [runDist,       setRunDist]       = useState('')
+  const [swimDist,      setSwimDist]      = useState('500')
+  const [bikeDist,      setBikeDist]      = useState('25')
+  const [runDist,       setRunDist]       = useState('5')
   const [injuryFlags,   setInjuryFlags]   = useState('')
   const [trainingPlan,  setTrainingPlan]  = useState('')
 
@@ -195,7 +195,6 @@ export default function Auth() {
                       <input
                         style={s.distInput}
                         type="number"
-                        placeholder="500"
                         value={swimDist}
                         onChange={e => setSwimDist(e.target.value)}
                       />
@@ -205,7 +204,6 @@ export default function Auth() {
                       <input
                         style={s.distInput}
                         type="number"
-                        placeholder="25"
                         value={bikeDist}
                         onChange={e => setBikeDist(e.target.value)}
                       />
@@ -215,7 +213,6 @@ export default function Auth() {
                       <input
                         style={s.distInput}
                         type="number"
-                        placeholder="5"
                         value={runDist}
                         onChange={e => setRunDist(e.target.value)}
                       />
