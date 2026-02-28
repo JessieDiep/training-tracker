@@ -22,7 +22,7 @@ function isoDate(date) {
 // ── Queries ─────────────────────────────────────────────────────────────────
 
 /** Fetch workouts from the last `days` days, newest first. */
-export async function getRecentWorkouts(days = 14) {
+export async function getRecentWorkouts(days = 7) {
   const since = new Date()
   since.setDate(since.getDate() - days)
   const { data, error } = await supabase
@@ -32,6 +32,24 @@ export async function getRecentWorkouts(days = 14) {
     .order('date', { ascending: false })
   if (error) throw error
   return data ?? []
+}
+
+/**
+ * Fetch workouts older than dateStr, newest-first, up to limit rows.
+ * Fetches limit+1 to detect whether more exist. Returns { workouts, hasMore }.
+ */
+export async function getWorkoutsBefore(dateStr, limit = 10) {
+  const { data, error } = await supabase
+    .from('workouts')
+    .select('*')
+    .lt('date', dateStr)
+    .order('date',       { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(limit + 1)
+  if (error) throw error
+  const rows = data ?? []
+  const hasMore = rows.length > limit
+  return { workouts: hasMore ? rows.slice(0, limit) : rows, hasMore }
 }
 
 /** Fetch workouts from this calendar week (Mon–Sun). */

@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import {
   getThisWeekWorkouts,
   getRecentWorkouts,
+  getWorkoutsBefore,
   getDiscEmoji,
   getDiscStyle,
   formatWorkoutDetail,
@@ -540,6 +541,8 @@ export default function Home() {
   const [daysLeft,        setDaysLeft]        = useState(0)
   const [weekWorkouts,    setWeekWorkouts]    = useState([])
   const [recentWorkouts,  setRecentWorkouts]  = useState([])
+  const [hasMoreWorkouts, setHasMoreWorkouts] = useState(false)
+  const [loadingMore,     setLoadingMore]     = useState(false)
   const [loading,         setLoading]         = useState(true)
   const [fetchError,      setFetchError]      = useState(false)
   const [selectedWorkout, setSelectedWorkout] = useState(null)
@@ -552,6 +555,7 @@ export default function Home() {
       .then(([week, recent]) => {
         setWeekWorkouts(week)
         setRecentWorkouts(recent)
+        setHasMoreWorkouts(recent.length > 0)
       })
       .catch(err => { console.error(err); setFetchError(true) })
       .finally(() => setLoading(false))
@@ -621,6 +625,21 @@ export default function Home() {
     setRecentWorkouts(prev => prev.map(w => w.id === updated.id ? updated : w))
     setWeekWorkouts(prev => prev.map(w => w.id === updated.id ? updated : w))
     setSelectedWorkout(updated)
+  }
+
+  async function handleLoadMore() {
+    if (loadingMore || !recentWorkouts.length) return
+    setLoadingMore(true)
+    try {
+      const oldestDate = recentWorkouts[recentWorkouts.length - 1].date
+      const { workouts, hasMore } = await getWorkoutsBefore(oldestDate, 10)
+      setRecentWorkouts(prev => [...prev, ...workouts])
+      setHasMoreWorkouts(hasMore)
+    } catch (err) {
+      console.error('Load more failed:', err)
+    } finally {
+      setLoadingMore(false)
+    }
   }
 
   const pctDone       = Math.round(ringProgress * 100)
@@ -745,7 +764,7 @@ export default function Home() {
           {!loading && !fetchError && recentWorkouts.length === 0 && (
             <div style={s.emptyState}>No workouts yet — log your first one!</div>
           )}
-          {recentWorkouts.slice(0, 5).map((w, i) => {
+          {recentWorkouts.map((w, i) => {
             const dc = getDiscStyle(w.discipline)
             return (
               <div
@@ -767,6 +786,11 @@ export default function Home() {
               </div>
             )
           })}
+          {!loading && !fetchError && hasMoreWorkouts && (
+            <button style={s.loadMoreBtn} onClick={handleLoadMore} disabled={loadingMore}>
+              {loadingMore ? 'Loading…' : 'Load more'}
+            </button>
+          )}
         </div>
 
         <div style={{ height: 24 }} />
@@ -900,6 +924,7 @@ const s = {
   recentTime:   { fontSize: 10, color: '#C077A0', fontWeight: 600, flexShrink: 0 },
   emptyState:   { textAlign: 'center', color: '#D4B0C0', fontSize: 13, fontWeight: 600, padding: '20px 0' },
   errorState:   { textAlign: 'center', color: '#C4354F', fontSize: 12, fontWeight: 600, padding: '20px 0', lineHeight: 1.5 },
+  loadMoreBtn:  { width: '100%', padding: '10px 0', background: 'transparent', border: '1.5px solid #F4C0D0', borderRadius: 12, fontSize: 12, fontWeight: 700, color: '#C077A0', cursor: 'pointer', fontFamily: 'inherit', marginTop: 4 },
 }
 
 const css = `
