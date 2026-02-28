@@ -178,6 +178,17 @@ export async function saveWorkout({ discipline, duration, effort, details, notes
   return data
 }
 
+/** Fetch all strength workouts (date + details only) for PB calculations. */
+export async function getStrengthWorkouts() {
+  const { data, error } = await supabase
+    .from('workouts')
+    .select('date, details')
+    .eq('discipline', 'strength')
+    .order('date', { ascending: true })
+  if (error) throw error
+  return data ?? []
+}
+
 /** Fetch all swim/bike/run workouts for personal best calculations. */
 export async function getTriWorkouts() {
   const { data, error } = await supabase

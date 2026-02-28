@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getWeeklyVolumeData, getClimbSends, getTriWorkouts } from '../lib/workouts'
+import { getWeeklyVolumeData, getClimbSends, getTriWorkouts, getStrengthWorkouts } from '../lib/workouts'
 import { useAuth } from '../contexts/AuthContext'
 
 // Grade → colour mapping (easiest → hardest)
@@ -65,6 +65,70 @@ function computePBs(workouts) {
     }
   }
   return pbs
+}
+
+// ── STRENGTH PBs ──────────────────────────────────────────────────────────────
+
+function computeStrengthData(workouts) {
+  // Returns { exerciseName: [{ date, weight, reps, sets, est1RM }] }
+  // One entry per date (best set that day by est1RM), sorted ascending.
+  const byExercise = {}
+  for (const w of workouts) {
+    for (const ex of w.details?.exercises ?? []) {
+      if (!ex.weight || !ex.reps || ex.weight <= 0) continue
+      const est1RM = Math.round(ex.weight * (1 + ex.reps / 30))
+      if (!byExercise[ex.name]) byExercise[ex.name] = {}
+      const prev = byExercise[ex.name][w.date]
+      if (!prev || est1RM > prev.est1RM) {
+        byExercise[ex.name][w.date] = { date: w.date, weight: ex.weight, reps: ex.reps, sets: ex.sets, est1RM }
+      }
+    }
+  }
+  const result = {}
+  for (const [name, dateMap] of Object.entries(byExercise)) {
+    result[name] = Object.values(dateMap).sort((a, b) => a.date.localeCompare(b.date))
+  }
+  return result
+}
+
+function StrengthChart({ points }) {
+  if (points.length < 2) return (
+    <div style={{ textAlign: 'center', fontSize: 11, color: '#C077A0', padding: '12px 0' }}>
+      Log this exercise at least twice to see your trend.
+    </div>
+  )
+  const W = 295, H = 90, PAD = 20, PAD_TOP = 8, PAD_BTM = 16
+  const vals = points.map(p => p.est1RM)
+  const minV = Math.min(...vals)
+  const maxV = Math.max(...vals)
+  const range = maxV - minV || 10
+  const xs = points.map((_, i) => PAD + (i / (points.length - 1)) * (W - 2 * PAD))
+  const ys = vals.map(v => PAD_TOP + (1 - (v - minV) / range) * (H - PAD_TOP - PAD_BTM))
+  const linePath = xs.map((x, i) => `${i === 0 ? 'M' : 'L'}${x},${ys[i]}`).join(' ')
+  const fillPath = `${linePath} L${xs[xs.length - 1]},${H} L${xs[0]},${H} Z`
+  const fmtDate = d => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  return (
+    <svg width="100%" viewBox={`0 0 ${W} ${H + 4}`} style={{ display: 'block', overflow: 'visible' }}>
+      <defs>
+        <linearGradient id="strengthGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#FFF3A8" stopOpacity="0.8" />
+          <stop offset="100%" stopColor="#FFF3A8" stopOpacity="0.05" />
+        </linearGradient>
+      </defs>
+      <path d={fillPath} fill="url(#strengthGrad)" />
+      <path d={linePath} fill="none" stroke="#B8960A" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      {points.map((p, i) => (
+        <circle key={i} cx={xs[i]} cy={ys[i]} r={4} fill="#B8960A" stroke="#fff" strokeWidth={1.5} />
+      ))}
+      <text x={xs[0]} y={H + 4} fontSize={9} fill="#C077A0" textAnchor="middle">{fmtDate(points[0].date)}</text>
+      {points.length > 2 && (
+        <text x={xs[Math.floor(points.length / 2)]} y={H + 4} fontSize={9} fill="#C077A0" textAnchor="middle">
+          {fmtDate(points[Math.floor(points.length / 2)].date)}
+        </text>
+      )}
+      <text x={xs[xs.length - 1]} y={H + 4} fontSize={9} fill="#C077A0" textAnchor="middle">{fmtDate(points[points.length - 1].date)}</text>
+    </svg>
+  )
 }
 
 // ── MINI BAR CHART ────────────────────────────────────────────────────────────
@@ -164,19 +228,30 @@ export default function Progress() {
   const [volumeData,  setVolumeData]  = useState(null)
   const [thisWeek,    setThisWeek]    = useState({})
   const [lastWeek,    setLastWeek]    = useState({})
-  const [climbSends,  setClimbSends]  = useState({})
-  const [pbs,         setPbs]         = useState({ swim: {}, bike: {}, run: {} })
-  const [loading,     setLoading]     = useState(true)
+  const [climbSends,    setClimbSends]    = useState({})
+  const [pbs,           setPbs]           = useState({ swim: {}, bike: {}, run: {} })
+  const [strengthData,  setStrengthData]  = useState({})
+  const [activeExercise,setActiveExercise]= useState(null)
+  const [loading,       setLoading]       = useState(true)
 
   useEffect(() => {
     Promise.all([
       getWeeklyVolumeData(6),
       getClimbSends(),
       getTriWorkouts(),
-    ]).then(([vol, sends, triW]) => {
+      getStrengthWorkouts(),
+    ]).then(([vol, sends, triW, strengthW]) => {
       setVolumeData(vol)
       setClimbSends(sends)
       setPbs(computePBs(triW))
+      const sd = computeStrengthData(strengthW)
+      setStrengthData(sd)
+      if ('Hip Thrusts' in sd) {
+        setActiveExercise('Hip Thrusts')
+      } else {
+        const sorted = Object.entries(sd).sort((a, b) => b[1].length - a[1].length)
+        if (sorted.length) setActiveExercise(sorted[0][0])
+      }
       const summarise = (workouts) => ({
         swim:     workouts.filter(w => w.discipline === 'swim').reduce((s, w) => s + (w.details?.distance || 0), 0),
         bike:     workouts.filter(w => w.discipline === 'bike').reduce((s, w) => s + (w.duration_minutes || 0), 0),
@@ -352,6 +427,60 @@ export default function Progress() {
           })()}
         </div>
 
+        {/* ── STRENGTH PBs ── */}
+        {Object.keys(strengthData).length > 0 && (() => {
+          const exercises = Object.entries(strengthData)
+            .sort((a, b) => b[1].length - a[1].length)
+            .map(([name]) => name)
+          const points = activeExercise ? strengthData[activeExercise] ?? [] : []
+          const best   = points.reduce((b, p) => p.est1RM > (b?.est1RM ?? 0) ? p : b, null)
+          return (
+            <>
+              <div style={s.sectionHeader}>
+                <span style={s.sectionTitle}>Strength PBs</span>
+                <span style={s.sectionHint}>est. 1RM per exercise</span>
+              </div>
+              <select
+                value={activeExercise ?? ''}
+                onChange={e => setActiveExercise(e.target.value)}
+                style={s.exerciseSelect}
+              >
+                {exercises.map(name => (
+                  <option key={name} value={name}>{name} ({strengthData[name].length} sessions)</option>
+                ))}
+              </select>
+              {best && (
+                <div style={{ ...s.chartCard, borderColor: '#FFF3A8' }}>
+                  <div style={s.chartHeader}>
+                    <span style={{ ...s.chartTitle, color: '#B8960A' }}>Est. 1RM · {activeExercise}</span>
+                    <span style={s.chartUnit}>Epley formula</span>
+                  </div>
+                  <div style={s.strengthBest}>
+                    <span style={s.strengthBestNum}>~{best.est1RM}</span>
+                    <span style={s.strengthBestUnit}>kg</span>
+                  </div>
+                  <div style={s.strengthBestSub}>
+                    {best.weight}kg × {best.reps} reps ({best.sets} sets)
+                  </div>
+                  {points.length >= 2 && (
+                    <>
+                      <div style={{ fontSize: 11, fontWeight: 800, marginTop: 14, marginBottom: 6, color: '#B8960A' }}>
+                        Trend over {points.length} sessions
+                      </div>
+                      <StrengthChart points={points} />
+                    </>
+                  )}
+                  {points.length === 1 && (
+                    <div style={{ fontSize: 11, color: '#C077A0', marginTop: 8 }}>
+                      Log this exercise at least twice to see your trend.
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )
+        })()}
+
         <div style={{ height: 32 }} />
       </div>
     </div>
@@ -400,6 +529,12 @@ const s = {
   pbTime:     { fontSize: 15, fontWeight: 900, letterSpacing: -0.3 },
   racePill:   { fontSize: 9, fontWeight: 800, borderRadius: 6, padding: '2px 6px', letterSpacing: 0.2, textTransform: 'uppercase' },
   pbEmpty:    { fontSize: 12, color: '#C0A0B8', fontWeight: 600, textAlign: 'center', padding: '16px 0' },
+
+  exerciseSelect:  { width: '100%', padding: '9px 12px', borderRadius: 12, border: '1.5px solid #F4C0D0', background: '#fff', fontSize: 13, fontWeight: 700, color: '#C077A0', fontFamily: 'inherit', cursor: 'pointer', marginBottom: 10, appearance: 'auto' },
+  strengthBest:    { display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 10 },
+  strengthBestNum: { fontSize: 36, fontWeight: 900, color: '#B8960A', lineHeight: 1 },
+  strengthBestUnit:{ fontSize: 16, fontWeight: 700, color: '#B8960A' },
+  strengthBestSub: { fontSize: 11, color: '#999', marginTop: 2, marginBottom: 4 },
 }
 
 const css = `
