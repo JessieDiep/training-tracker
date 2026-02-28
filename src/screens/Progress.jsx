@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { getWeeklyVolumeData, getThisWeekWorkouts, getLastWeekWorkouts, getClimbSends, getTriWorkouts } from '../lib/workouts'
+import { getWeeklyVolumeData, getClimbSends, getTriWorkouts } from '../lib/workouts'
 import { useAuth } from '../contexts/AuthContext'
 
 // Grade → colour mapping (easiest → hardest)
@@ -171,11 +171,9 @@ export default function Progress() {
   useEffect(() => {
     Promise.all([
       getWeeklyVolumeData(6),
-      getThisWeekWorkouts(),
-      getLastWeekWorkouts(),
       getClimbSends(),
       getTriWorkouts(),
-    ]).then(([vol, thisW, lastW, sends, triW]) => {
+    ]).then(([vol, sends, triW]) => {
       setVolumeData(vol)
       setClimbSends(sends)
       setPbs(computePBs(triW))
@@ -186,8 +184,8 @@ export default function Progress() {
         strength: workouts.filter(w => w.discipline === 'strength').length,
         climb:    workouts.filter(w => w.discipline === 'climb').length,
       })
-      setThisWeek(summarise(thisW))
-      setLastWeek(summarise(lastW))
+      setThisWeek(summarise(vol.thisWeekRaw))
+      setLastWeek(summarise(vol.lastWeekRaw))
     }).catch(console.error).finally(() => setLoading(false))
   }, [])
 

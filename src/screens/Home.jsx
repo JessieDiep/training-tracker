@@ -535,6 +535,7 @@ export default function Home() {
     ? RACE_DATE.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     : ''
   const firstName = profile?.name?.split(' ')[0] ?? ''
+  const greeting  = getGreeting(firstName)
 
   const [daysLeft,        setDaysLeft]        = useState(0)
   const [weekWorkouts,    setWeekWorkouts]    = useState([])
@@ -639,8 +640,8 @@ export default function Home() {
       {/* ── HEADER ── */}
       <div style={s.header}>
         <div>
-          <div style={s.headerGreeting}>{getGreeting(firstName).heading}</div>
-          <div style={s.headerSub}>{getGreeting(firstName).sub}</div>
+          <div style={s.headerGreeting}>{greeting.heading}</div>
+          <div style={s.headerSub}>{greeting.sub}</div>
         </div>
         <button style={s.settingsBtn} onClick={() => setShowSettings(true)} aria-label="Settings">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C077A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

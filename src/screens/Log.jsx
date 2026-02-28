@@ -1,6 +1,8 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { saveWorkout } from '../lib/workouts'
+import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 
 // ── CONFIG ───────────────────────────────────────────────────────────────────
 const DISCIPLINES = [
@@ -31,13 +33,14 @@ const CLIMB_GRADES = [
   '5.11a','5.11b','5.11c','5.11d',
   '5.12a','5.12b','5.12c','5.12d',
 ]
-const EXERCISE_DEFAULTS = {
-  'Hip Thrusts': 90, 'RDL': 65, 'Split Squats': 5, 'Bulgarian Split Squat': 5,
-  'Lunges': 20, 'Step-ups': 20, 'Box Hops': 0, 'Abduction': 30,
-  'Squats': 65, 'Deadlift': 95, 'Bench Press': 45, 'Pull-ups': 0,
-  'Rows': 35, 'Shoulder Press': 20, 'Lat Pulldown': 50, 'Bicep Curl': 15,
-  'Tricep Extension': 15, 'Plank': 0, 'Crunches': 0, 'Leg Press': 90,
-}
+// Exercise names for autocomplete — no hardcoded weights (each user builds their own from history)
+const EXERCISE_NAMES = [
+  'Hip Thrusts', 'RDL', 'Split Squats', 'Bulgarian Split Squat',
+  'Lunges', 'Step-ups', 'Box Hops', 'Abduction',
+  'Squats', 'Deadlift', 'Bench Press', 'Pull-ups',
+  'Rows', 'Shoulder Press', 'Lat Pulldown', 'Bicep Curl',
+  'Tricep Extension', 'Plank', 'Crunches', 'Leg Press',
+]
 
 // ── NUMERIC KEYPAD ────────────────────────────────────────────────────────────
 function NumKeypad({ value, onConfirm, onClose, unit = '', allowDecimal = false }) {
@@ -257,16 +260,18 @@ function StrengthForm({ data, setData, savedExercises, onSaveExercise }) {
   const [pendingEx,       setPendingEx]       = useState(null)
   const [firstWeightOpen, setFirstWeightOpen] = useState(false)
 
-  const allKnown    = { ...EXERCISE_DEFAULTS, ...savedExercises }
-  const suggestions = Object.keys(allKnown).filter(e =>
+  // Suggestions: user's own exercise history first, then any known names they haven't used yet
+  const suggestions = [
+    ...Object.keys(savedExercises),
+    ...EXERCISE_NAMES.filter(n => !(n in savedExercises)),
+  ].filter(e =>
     e.toLowerCase().includes(exInput.toLowerCase()) &&
     !data.exercises.find(x => x.name === e)
   )
 
   function pickExercise(name) {
-    const known = allKnown[name]
-    if (known !== undefined) {
-      addExercise(name, known)
+    if (name in savedExercises) {
+      addExercise(name, savedExercises[name])
     } else {
       setPendingEx({ name })
       setFirstWeightOpen(true)
@@ -438,6 +443,7 @@ function ClimbForm({ data, setData }) {
 // ── MAIN ─────────────────────────────────────────────────────────────────────
 export default function Log() {
   const navigate = useNavigate()
+  const { user } = useAuth()
 
   const [step,          setStep]         = useState('discipline')
   const [selectedDisc,  setSelectedDisc] = useState(null)
@@ -446,6 +452,29 @@ export default function Log() {
   const [saved,         setSaved]        = useState(false)
   const [saving,        setSaving]       = useState(false)
   const [savedExercises,setSavedExercises] = useState({})
+
+  // Load each user's last-used weight per exercise from their workout history
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from('workouts')
+      .select('details')
+      .eq('discipline', 'strength')
+      .order('date', { ascending: false })
+      .limit(30)
+      .then(({ data }) => {
+        if (!data?.length) return
+        const map = {}
+        for (const workout of data) { // newest-first, so first occurrence = most recent
+          for (const ex of workout.details?.exercises ?? []) {
+            if (ex.name && !(ex.name in map)) {
+              map[ex.name] = ex.weight ?? 0
+            }
+          }
+        }
+        setSavedExercises(map)
+      })
+  }, [user?.id])
 
   const [swimData,     setSwimData]     = useState({ focus: 'Endurance', distance: 0, location: 'Pool', notes: '' })
   const [bikeData,     setBikeData]     = useState({ type: 'Endurance', distance: 0, location: 'Indoor / Trainer', notes: '' })

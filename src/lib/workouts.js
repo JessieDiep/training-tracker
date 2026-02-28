@@ -76,7 +76,7 @@ export async function getWeeklyVolumeData(weeksBack = 6) {
   const oldest = starts[0]
   const { data: workouts, error } = await supabase
     .from('workouts')
-    .select('*')
+    .select('id, date, discipline, duration_minutes, details, effort, notes')
     .gte('date', oldest)
     .order('date', { ascending: true })
   if (error) throw error
@@ -88,12 +88,18 @@ export async function getWeeklyVolumeData(weeksBack = 6) {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   })
 
+  let thisWeekRaw = []
+  let lastWeekRaw = []
+
   for (let i = 0; i < starts.length; i++) {
     const weekStart = starts[i]
     const nextMonday = new Date(weekStart + 'T00:00:00')
     nextMonday.setDate(nextMonday.getDate() + 7)
     const weekEnd = isoDate(nextMonday)
     const inWeek  = ws.filter(w => w.date >= weekStart && w.date < weekEnd)
+
+    if (i === starts.length - 1) thisWeekRaw = inWeek
+    if (i === starts.length - 2) lastWeekRaw = inWeek
 
     result.swim    .push(inWeek.filter(w => w.discipline === 'swim')
                               .reduce((s, w) => s + (w.details?.distance || 0), 0))
@@ -105,7 +111,7 @@ export async function getWeeklyVolumeData(weeksBack = 6) {
     result.climb   .push(inWeek.filter(w => w.discipline === 'climb').length)
   }
 
-  return { data: result, labels }
+  return { data: result, labels, thisWeekRaw, lastWeekRaw }
 }
 
 /**
