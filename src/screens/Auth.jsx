@@ -16,6 +16,7 @@ export default function Auth() {
   const [signupEmail,   setSignupEmail]   = useState('')
   const [signupPassword,setSignupPassword]= useState('')
   const [hasRace,       setHasRace]       = useState(false)
+  const [raceType,      setRaceType]      = useState('tri')  // 'tri' | 'du' | 'run'
   const [raceName,      setRaceName]      = useState('')
   const [raceDate,      setRaceDate]      = useState('')
   const [raceGoal,      setRaceGoal]      = useState('')
@@ -53,7 +54,9 @@ export default function Auth() {
         race_name:      hasRace ? raceName.trim()  : null,
         race_goal:      hasRace ? raceGoal.trim()  : null,
         race_distances: hasRace
-          ? { swim: Number(swimDist) || 0, bike: Number(bikeDist) || 0, run: Number(runDist) || 0 }
+          ? raceType === 'tri' ? { swim: +swimDist, bike: +bikeDist, run: +runDist }
+          : raceType === 'du'  ? { bike: +bikeDist, run: +runDist }
+          :                      { run: +runDist }
           : {},
         injury_flags: injuryFlags.trim() || 'None',
         training_plan: trainingPlan.trim() || null,
@@ -163,6 +166,16 @@ export default function Auth() {
 
               {hasRace && (
                 <div style={s.raceSection}>
+                  <label style={s.label}>Race type</label>
+                  <div style={s.raceTypeRow}>
+                    {[['tri','Triathlon'],['du','Duathlon'],['run','Running']].map(([v, label]) => (
+                      <button key={v} type="button"
+                        style={{ ...s.raceTypeBtn, ...(raceType === v ? s.raceTypeBtnActive : {}) }}
+                        onClick={() => setRaceType(v)}
+                      >{label}</button>
+                    ))}
+                  </div>
+
                   <label style={s.label}>Race name</label>
                   <input
                     style={s.input}
@@ -191,24 +204,28 @@ export default function Auth() {
 
                   <label style={s.label}>Race distances</label>
                   <div style={s.distRow}>
-                    <div style={s.distField}>
-                      <input
-                        style={s.distInput}
-                        type="number"
-                        value={swimDist}
-                        onChange={e => setSwimDist(e.target.value)}
-                      />
-                      <span style={s.distUnit}>m swim</span>
-                    </div>
-                    <div style={s.distField}>
-                      <input
-                        style={s.distInput}
-                        type="number"
-                        value={bikeDist}
-                        onChange={e => setBikeDist(e.target.value)}
-                      />
-                      <span style={s.distUnit}>km bike</span>
-                    </div>
+                    {raceType === 'tri' && (
+                      <div style={s.distField}>
+                        <input
+                          style={s.distInput}
+                          type="number"
+                          value={swimDist}
+                          onChange={e => setSwimDist(e.target.value)}
+                        />
+                        <span style={s.distUnit}>m swim</span>
+                      </div>
+                    )}
+                    {(raceType === 'tri' || raceType === 'du') && (
+                      <div style={s.distField}>
+                        <input
+                          style={s.distInput}
+                          type="number"
+                          value={bikeDist}
+                          onChange={e => setBikeDist(e.target.value)}
+                        />
+                        <span style={s.distUnit}>km bike</span>
+                      </div>
+                    )}
                     <div style={s.distField}>
                       <input
                         style={s.distInput}
@@ -418,6 +435,29 @@ const s = {
     display: 'flex',
     flexDirection: 'column',
     gap: 4,
+  },
+  raceTypeRow: {
+    display: 'flex',
+    gap: 6,
+    marginBottom: 4,
+  },
+  raceTypeBtn: {
+    flex: 1,
+    padding: '8px 4px',
+    borderRadius: 10,
+    border: '1.5px solid #F4C0D0',
+    background: '#FFF8FB',
+    fontSize: 12,
+    fontWeight: 700,
+    color: '#C077A0',
+    cursor: 'pointer',
+    fontFamily: "'Nunito', system-ui, sans-serif",
+    transition: 'all 0.15s',
+  },
+  raceTypeBtnActive: {
+    background: 'linear-gradient(135deg, #F48FB1, #E91E8C)',
+    border: '1.5px solid #E91E8C',
+    color: '#fff',
   },
   distRow: {
     display: 'flex',

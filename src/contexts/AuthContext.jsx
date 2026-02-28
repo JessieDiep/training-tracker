@@ -56,8 +56,18 @@ export function AuthProvider({ children }) {
     if (user) await fetchProfile(user.id)
   }
 
+  async function updateProfile(updates) {
+    if (!user) return
+    const { error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', user.id)
+    if (error) throw error
+    await fetchProfile(user.id)
+  }
+
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, signUp, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profile, loading, signIn, signUp, signOut, refreshProfile, updateProfile }}>
       {children}
     </AuthContext.Provider>
   )

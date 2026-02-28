@@ -284,6 +284,177 @@ function WorkoutSheet({ workout, onClose, onDeleted, onUpdated }) {
   )
 }
 
+// ── RACE TYPE HELPER ──────────────────────────────────────────────────────────
+function inferRaceType(distances) {
+  if (!distances) return 'tri'
+  if ('swim' in distances) return 'tri'
+  if ('bike' in distances) return 'du'
+  return 'run'
+}
+
+// ── SETTINGS SHEET ────────────────────────────────────────────────────────────
+const FAQ_ITEMS = [
+  { q: 'How do I log a workout?',       a: 'Tap "Log workout" on the Home screen, choose a discipline, and fill in the details.' },
+  { q: 'Can I edit or delete a workout?', a: 'Yes — tap any recent workout on Home or any entry in the Progress tab to open the detail sheet. Use "Edit" or "Delete" from there.' },
+  { q: 'What does the coach know?',     a: 'Coach sees your full workout history and your profile (race details, injury flags). It uses this to give personalised advice.' },
+  { q: 'Will I get logged out?',        a: 'No — your session is saved indefinitely. Tap "Sign out" only when you need to switch accounts.' },
+  { q: 'Can friends use the same app?', a: 'Yes! Each person creates their own account. Data is completely isolated — no one sees your workouts.' },
+]
+
+function SettingsSheet({ profile, onClose, onSignOut, onSave }) {
+  const [hasRace,  setHasRace]  = useState(profile?.has_race ?? false)
+  const [raceType, setRaceType] = useState(() => inferRaceType(profile?.race_distances))
+  const [raceName, setRaceName] = useState(profile?.race_name ?? '')
+  const [raceDate, setRaceDate] = useState(profile?.race_date ?? '')
+  const [raceGoal, setRaceGoal] = useState(profile?.race_goal ?? '')
+  const [swimDist, setSwimDist] = useState(String(profile?.race_distances?.swim ?? 500))
+  const [bikeDist, setBikeDist] = useState(String(profile?.race_distances?.bike ?? 25))
+  const [runDist,  setRunDist]  = useState(String(profile?.race_distances?.run  ?? 5))
+  const [saving,   setSaving]   = useState(false)
+  const [saved,    setSaved]    = useState(false)
+  const [faqOpen,  setFaqOpen]  = useState(null)
+
+  async function handleSave() {
+    setSaving(true)
+    try {
+      const race_distances = !hasRace ? {}
+        : raceType === 'tri' ? { swim: +swimDist, bike: +bikeDist, run: +runDist }
+        : raceType === 'du'  ? { bike: +bikeDist, run: +runDist }
+        :                      { run: +runDist }
+
+      await onSave({
+        has_race:       hasRace,
+        race_name:      hasRace ? raceName || null  : null,
+        race_date:      hasRace ? raceDate || null  : null,
+        race_goal:      hasRace ? raceGoal || null  : null,
+        race_distances,
+      })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      console.error('Settings save failed:', err)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    <>
+      <div style={sh.backdrop} onClick={onClose} />
+      <div style={ss.sheet}>
+        <div style={sh.handle} />
+
+        {/* Header */}
+        <div style={ss.header}>
+          <div style={ss.title}>Settings</div>
+          <button style={sh.closeBtn} onClick={onClose}>×</button>
+        </div>
+
+        {/* Account */}
+        <div style={ss.sectionLabel}>Account</div>
+        <div style={ss.namePill}>{profile?.name}</div>
+
+        {/* Race */}
+        <div style={ss.sectionLabel}>Race</div>
+
+        <div style={ss.toggleRow}>
+          <span style={ss.toggleLabel}>Training for a race?</span>
+          <button
+            style={{ ...ss.toggle, background: hasRace ? '#E91E8C' : '#E0D0D8' }}
+            onClick={() => setHasRace(v => !v)}
+          >
+            <div style={{ ...ss.toggleThumb, transform: hasRace ? 'translateX(18px)' : 'translateX(0)' }} />
+          </button>
+        </div>
+
+        {hasRace && (
+          <>
+            <div style={{ marginTop: 10 }}>
+              <div style={ss.fieldLabel}>Race type</div>
+              <div style={ss.raceTypeRow}>
+                {[['tri','Triathlon'],['du','Duathlon'],['run','Running']].map(([v, label]) => (
+                  <button key={v} type="button"
+                    style={{ ...ss.raceTypeBtn, ...(raceType === v ? ss.raceTypeBtnActive : {}) }}
+                    onClick={() => setRaceType(v)}
+                  >{label}</button>
+                ))}
+              </div>
+            </div>
+
+            <div style={ss.fieldGroup}>
+              <div style={ss.fieldLabel}>Race name</div>
+              <input style={ss.input} value={raceName} placeholder="e.g. Sprint Triathlon"
+                onChange={e => setRaceName(e.target.value)} />
+            </div>
+
+            <div style={ss.fieldGroup}>
+              <div style={ss.fieldLabel}>Race date</div>
+              <input style={ss.input} type="date" value={raceDate}
+                onChange={e => setRaceDate(e.target.value)} />
+            </div>
+
+            <div style={ss.fieldGroup}>
+              <div style={ss.fieldLabel}>Race goal</div>
+              <input style={ss.input} value={raceGoal} placeholder="e.g. Finish under 2 hours"
+                onChange={e => setRaceGoal(e.target.value)} />
+            </div>
+
+            <div style={ss.fieldGroup}>
+              <div style={ss.fieldLabel}>Race distances</div>
+              <div style={ss.distRow}>
+                {raceType === 'tri' && (
+                  <div style={ss.distField}>
+                    <input style={ss.distInput} type="number" value={swimDist}
+                      onChange={e => setSwimDist(e.target.value)} />
+                    <span style={ss.distUnit}>m swim</span>
+                  </div>
+                )}
+                {(raceType === 'tri' || raceType === 'du') && (
+                  <div style={ss.distField}>
+                    <input style={ss.distInput} type="number" value={bikeDist}
+                      onChange={e => setBikeDist(e.target.value)} />
+                    <span style={ss.distUnit}>km bike</span>
+                  </div>
+                )}
+                <div style={ss.distField}>
+                  <input style={ss.distInput} type="number" value={runDist}
+                    onChange={e => setRunDist(e.target.value)} />
+                  <span style={ss.distUnit}>km run</span>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        <button
+          style={{ ...ss.saveBtn, opacity: saving ? 0.6 : 1 }}
+          onClick={handleSave}
+          disabled={saving}
+        >
+          {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save race settings'}
+        </button>
+
+        {/* FAQ */}
+        <div style={{ ...ss.sectionLabel, marginTop: 24 }}>FAQ</div>
+        {FAQ_ITEMS.map((item, i) => (
+          <div key={i}>
+            <button style={ss.faqQ} onClick={() => setFaqOpen(faqOpen === i ? null : i)}>
+              <span style={{ flex: 1, textAlign: 'left' }}>{item.q}</span>
+              <span style={{ fontSize: 18, color: '#C077A0', flexShrink: 0 }}>{faqOpen === i ? '−' : '+'}</span>
+            </button>
+            {faqOpen === i && <div style={ss.faqA}>{item.a}</div>}
+          </div>
+        ))}
+
+        {/* Sign out */}
+        <button style={ss.signOutBtn} onClick={onSignOut}>Sign out</button>
+
+        <div style={{ height: 16 }} />
+      </div>
+    </>
+  )
+}
+
 // ── SHEET STYLES ─────────────────────────────────────────────────────────────
 const sh = {
   backdrop:    { position: 'absolute', inset: 0, background: 'rgba(139,26,74,0.3)', backdropFilter: 'blur(2px)', zIndex: 50 },
@@ -324,10 +495,38 @@ const sh = {
   saveBtn:     { flex: 1.5, background: 'linear-gradient(135deg, #F48FB1, #E91E8C)', border: 'none', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 12px rgba(233,30,140,0.3)' },
 }
 
+// ── SETTINGS SHEET STYLES ────────────────────────────────────────────────────
+const ss = {
+  sheet:        { ...sh.sheet, maxHeight: '92%' },
+  header:       { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
+  title:        { fontSize: 20, fontWeight: 900, color: '#8B1A4A' },
+  sectionLabel: { fontSize: 10, fontWeight: 800, color: '#C077A0', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8, marginTop: 4 },
+  namePill:     { background: '#FFF0F5', borderRadius: 12, padding: '12px 14px', fontSize: 15, fontWeight: 700, color: '#3A2040', marginBottom: 16 },
+  toggleRow:    { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F9D0DF' },
+  toggleLabel:  { fontSize: 13, fontWeight: 700, color: '#3A2040' },
+  toggle:       { width: 42, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', padding: 3, transition: 'background 0.2s', display: 'flex', alignItems: 'center', flexShrink: 0 },
+  toggleThumb:  { width: 18, height: 18, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.2)', transition: 'transform 0.2s' },
+  fieldGroup:   { marginTop: 12 },
+  fieldLabel:   { fontSize: 11, fontWeight: 700, color: '#C077A0', marginBottom: 5 },
+  input:        { width: '100%', background: '#FFF5F8', border: '1.5px solid #F4C0D0', borderRadius: 10, padding: '9px 12px', fontSize: 13, color: '#3A2040', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' },
+  raceTypeRow:  { display: 'flex', gap: 6 },
+  raceTypeBtn:  { flex: 1, padding: '8px 4px', borderRadius: 10, border: '1.5px solid #F4C0D0', background: '#FFF5F8', fontSize: 12, fontWeight: 700, color: '#C077A0', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' },
+  raceTypeBtnActive: { background: 'linear-gradient(135deg, #F48FB1, #E91E8C)', border: '1.5px solid #E91E8C', color: '#fff' },
+  distRow:      { display: 'flex', gap: 8 },
+  distField:    { flex: 1, display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' },
+  distInput:    { width: '100%', background: '#FFF5F8', border: '1.5px solid #F4C0D0', borderRadius: 10, padding: '9px 8px', fontSize: 15, fontWeight: 700, color: '#8B1A4A', textAlign: 'center', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' },
+  distUnit:     { fontSize: 10, fontWeight: 700, color: '#C077A0' },
+  saveBtn:      { width: '100%', background: 'linear-gradient(135deg, #F48FB1, #E91E8C)', border: 'none', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 12px rgba(233,30,140,0.3)', marginTop: 16 },
+  faqQ:         { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', background: 'none', border: 'none', borderBottom: '1px solid #F9D0DF', padding: '11px 0', fontSize: 13, fontWeight: 700, color: '#3A2040', cursor: 'pointer', fontFamily: 'inherit', gap: 8 },
+  faqA:         { fontSize: 12, color: '#5A3050', lineHeight: 1.6, padding: '8px 0 10px', borderBottom: '1px solid #F9D0DF' },
+  signOutBtn:   { width: '100%', background: '#FFF0F5', border: '1.5px solid #F4C0D0', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, color: '#C4354F', cursor: 'pointer', fontFamily: 'inherit', marginTop: 20 },
+}
+
 // ── HOME SCREEN ───────────────────────────────────────────────────────────────
 export default function Home() {
   const navigate = useNavigate()
-  const { profile } = useAuth()
+  const { profile, signOut, updateProfile } = useAuth()
+  const [showSettings, setShowSettings] = useState(false)
 
   // Derive race date string and Date object from profile
   const raceDate = profile?.has_race && profile?.race_date ? profile.race_date : null
@@ -443,6 +642,12 @@ export default function Home() {
           <div style={s.headerGreeting}>{getGreeting(firstName).heading}</div>
           <div style={s.headerSub}>{getGreeting(firstName).sub}</div>
         </div>
+        <button style={s.settingsBtn} onClick={() => setShowSettings(true)} aria-label="Settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C077A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+        </button>
       </div>
 
       {/* ── SCROLLABLE CONTENT ── */}
@@ -455,7 +660,7 @@ export default function Home() {
             <div style={s.raceLeft}>
               <div style={s.raceLabel}>Race day countdown</div>
               <div style={s.raceDays}>{daysLeft}</div>
-              <div style={s.raceSub}>Days until your triathlon</div>
+              <div style={s.raceSub}>Days until {profile?.race_name || 'your race'}</div>
               <div style={s.raceWks}>
                 {weeksLeft > 0 ? `${weeksLeft} wks · ` : ''}
                 {daysRemainder} day{daysRemainder !== 1 ? 's' : ''} · {raceDateDisplay}
@@ -575,6 +780,16 @@ export default function Home() {
           onUpdated={handleUpdated}
         />
       )}
+
+      {/* SETTINGS SHEET */}
+      {showSettings && (
+        <SettingsSheet
+          profile={profile}
+          onClose={() => setShowSettings(false)}
+          onSignOut={async () => { setShowSettings(false); await signOut() }}
+          onSave={async (updates) => { await updateProfile(updates) }}
+        />
+      )}
     </div>
   )
 }
@@ -600,6 +815,7 @@ const s = {
   },
   headerGreeting: { fontSize: 20, fontWeight: 800, color: '#8B1A4A', letterSpacing: -0.3 },
   headerSub:      { fontSize: 13, color: '#C077A0', marginTop: 2 },
+  settingsBtn:    { background: 'none', border: 'none', cursor: 'pointer', padding: 6, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
 
   scroll: {
     flex: 1,
