@@ -1,10 +1,40 @@
 -- ── jessprogressing — Supabase schema ──────────────────────────────────────
 -- Run this once in your Supabase project → SQL Editor
+--
+-- IMPORTANT: Before running, go to:
+--   Supabase Dashboard → Authentication → Email → Disable "Confirm email"
+-- This lets users sign up with any email without inbox access.
 
+-- ── Profiles table ────────────────────────────────────────────────────────────
+create table if not exists profiles (
+  id              uuid references auth.users on delete cascade primary key,
+  name            text not null,
+  has_race        boolean default false not null,
+  race_date       date,
+  race_name       text,
+  race_goal       text,
+  race_distances  jsonb default '{}',  -- { swim: 500, bike: 25, run: 5 }
+  injury_flags    text default 'None',
+  training_plan   text,                -- optional freeform weekly plan for coach
+  created_at      timestamptz default now() not null
+);
+
+alter table profiles enable row level security;
+
+drop policy if exists "Users manage own profile" on profiles;
+create policy "Users manage own profile"
+  on profiles
+  for all
+  using (auth.uid() = id)
+  with check (auth.uid() = id);
+
+-- ── Workouts table ────────────────────────────────────────────────────────────
 create table if not exists workouts (
   id               uuid        default gen_random_uuid() primary key,
   created_at       timestamptz default now()             not null,
   date             date        default current_date      not null,
+
+  user_id          uuid references auth.users,
 
   discipline       text        not null
     check (discipline in ('swim','bike','run','strength','climb','recover')),
@@ -19,33 +49,33 @@ create table if not exists workouts (
   mood             text
 );
 
--- Index for fast recent-workout queries
-create index if not exists workouts_date_idx on workouts (date desc);
+-- Indexes for fast queries
+create index if not exists workouts_date_idx    on workouts (date desc);
+create index if not exists workouts_user_id_idx on workouts (user_id);
 
--- Row Level Security: open access (single-user, no auth needed)
+-- Row Level Security: per-user isolation
 alter table workouts enable row level security;
 
-drop policy if exists "public_access" on workouts;
-create policy "public_access"
+drop policy if exists "public_access"          on workouts;
+drop policy if exists "Users manage own workouts" on workouts;
+create policy "Users manage own workouts"
   on workouts
   for all
-  using (true)
-  with check (true);
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
 
--- ── Optional: sample data to see the app working immediately ────────────────
--- Uncomment and run if you want placeholder data:
+-- ── Migrate existing data (run AFTER creating your account) ──────────────────
+-- 1. Go to Supabase → Authentication → Users, copy your UUID.
+-- 2. Uncomment and run the line below, replacing the UUID:
+--
+-- update workouts set user_id = 'YOUR-UUID-HERE' where user_id is null;
 
-/*
-insert into workouts (date, discipline, duration_minutes, effort, details, notes)
-values
-  (current_date,       'swim',     50, 7, '{"distance":1800,"location":"Pool","focus":"Endurance"}', null),
-  (current_date - 1,   'bike',     60, 6, '{"type":"Endurance","location":"Indoor / Trainer"}',     null),
-  (current_date - 2,   'strength', 55, 8, '{"focus":["Glutes","Core"]}',                            'felt strong'),
-  (current_date - 3,   'run',      35, 5, '{"distance":4.2,"surface":"Road","footPain":true}',      'modified session'),
-  (current_date - 4,   'recover',  30, 2, '{"types":["Stretch","Foam Roll"]}',                      null),
-  (current_date - 7,   'swim',     45, 6, '{"distance":1500,"location":"Pool","focus":"Technique"}',null),
-  (current_date - 8,   'climb',    90, 7, '{"location":"Gym","routes":[{"grade":"5.11a","attempts":3,"status":"working"}]}', null),
-  (current_date - 9,   'bike',     75, 7, '{"type":"Endurance","location":"Outdoor"}',              null),
-  (current_date - 10,  'run',      30, 4, '{"distance":3.5,"surface":"Treadmill","footPain":false}',null),
-  (current_date - 11,  'strength', 60, 8, '{"focus":["Glutes","Legs"]}',                           null);
-*/
+-- ── Optional: sample data ────────────────────────────────────────────────────
+-- After creating an account, you can insert sample rows.
+-- Set user_id to your UUID from Authentication → Users.
+--
+-- insert into workouts (user_id, date, discipline, duration_minutes, effort, details, notes)
+-- values
+--   ('YOUR-UUID-HERE', current_date,     'swim',     50, 7, '{"distance":1800,"location":"Pool","focus":"Endurance"}', null),
+--   ('YOUR-UUID-HERE', current_date - 1, 'bike',     60, 6, '{"type":"Endurance","location":"Indoor / Trainer"}',     null),
+--   ('YOUR-UUID-HERE', current_date - 2, 'strength', 55, 8, '{"focus":["Glutes","Core"]}',                           'felt strong');

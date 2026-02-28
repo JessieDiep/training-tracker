@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 import {
   getThisWeekWorkouts,
   getRecentWorkouts,
@@ -12,17 +13,16 @@ import {
   getTrainingStartDate,
 } from '../lib/workouts'
 
-const RACE_DATE     = new Date(2026, 6, 18)  // July 18, 2026 (month is 0-indexed)
 const FALLBACK_START = new Date(2026, 0, 5)   // Jan 5 2026 — used if no workouts yet
 const RING_R = 36                              // SVG ring radius (inside 96×96 viewBox)
 const RING_C = 2 * Math.PI * RING_R           // full circumference ≈ 226.2
 
-function getGreeting() {
+function getGreeting(name) {
   const h = new Date().getHours()
-  if (h >= 5  && h < 12) return { heading: 'Good morning, Jess', sub: "Let's get it" }
-  if (h >= 12 && h < 17) return { heading: 'Good afternoon, Jess', sub: 'Keep the momentum going' }
-  if (h >= 17 && h < 21) return { heading: 'Good evening, Jess', sub: 'End the day strong' }
-  return { heading: 'Hey Jess', sub: 'Rest is training too' }
+  if (h >= 5  && h < 12) return { heading: `Good morning, ${name}`, sub: "Let's get it" }
+  if (h >= 12 && h < 17) return { heading: `Good afternoon, ${name}`, sub: 'Keep the momentum going' }
+  if (h >= 17 && h < 21) return { heading: `Good evening, ${name}`, sub: 'End the day strong' }
+  return { heading: `Hey ${name}`, sub: 'Rest is training too' }
 }
 
 const DISCIPLINES = [
@@ -327,6 +327,15 @@ const sh = {
 // ── HOME SCREEN ───────────────────────────────────────────────────────────────
 export default function Home() {
   const navigate = useNavigate()
+  const { profile } = useAuth()
+
+  // Derive race date string and Date object from profile
+  const raceDate = profile?.has_race && profile?.race_date ? profile.race_date : null
+  const RACE_DATE = raceDate ? new Date(raceDate + 'T12:00:00') : null
+  const raceDateDisplay = RACE_DATE
+    ? RACE_DATE.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : ''
+  const firstName = profile?.name?.split(' ')[0] ?? ''
 
   const [daysLeft,        setDaysLeft]        = useState(0)
   const [weekWorkouts,    setWeekWorkouts]    = useState([])
@@ -337,8 +346,25 @@ export default function Home() {
   const [trainingStart,   setTrainingStart]   = useState(FALLBACK_START)
   const [ringProgress,    setRingProgress]    = useState(0)
 
+  // Fetch workouts on mount (independent of race date)
   useEffect(() => {
-    // Compare date-only (no time) so the count is always whole days
+    Promise.all([getThisWeekWorkouts(), getRecentWorkouts(7)])
+      .then(([week, recent]) => {
+        setWeekWorkouts(week)
+        setRecentWorkouts(recent)
+      })
+      .catch(err => { console.error(err); setFetchError(true) })
+      .finally(() => setLoading(false))
+
+    getTrainingStartDate()
+      .then(d => { if (d) setTrainingStart(d) })
+      .catch(() => {})
+  }, [])
+
+  // Days countdown — only runs when there is a race date
+  useEffect(() => {
+    if (!RACE_DATE) return
+
     function calcDays() {
       const now   = new Date()
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -368,33 +394,22 @@ export default function Home() {
       intervalId = setInterval(calcDays, 24 * 60 * 60 * 1000)
     }, msUntilETMidnight())
 
-    Promise.all([getThisWeekWorkouts(), getRecentWorkouts(7)])
-      .then(([week, recent]) => {
-        setWeekWorkouts(week)
-        setRecentWorkouts(recent)
-      })
-      .catch(err => { console.error(err); setFetchError(true) })
-      .finally(() => setLoading(false))
-
-    getTrainingStartDate()
-      .then(d => { if (d) setTrainingStart(d) })
-      .catch(() => {})
-
     return () => {
       clearTimeout(timeoutId)
       clearInterval(intervalId)
     }
-  }, [])
+  }, [raceDate]) // raceDate is a string — stable reference
 
   // Animate ring fill after trainingStart resolves
   useEffect(() => {
+    if (!RACE_DATE) return
     const today     = new Date()
     const totalDays = Math.max(Math.round((RACE_DATE - trainingStart) / 86400000), 1)
     const elapsed   = Math.round((today - trainingStart) / 86400000)
     const pct       = Math.min(Math.max(elapsed / totalDays, 0), 1)
     const t = setTimeout(() => setRingProgress(pct), 300)
     return () => clearTimeout(t)
-  }, [trainingStart])
+  }, [trainingStart, raceDate])
 
   function handleDeleted(id) {
     setRecentWorkouts(prev => prev.filter(w => w.id !== id))
@@ -425,48 +440,50 @@ export default function Home() {
       {/* ── HEADER ── */}
       <div style={s.header}>
         <div>
-          <div style={s.headerGreeting}>{getGreeting().heading}</div>
-          <div style={s.headerSub}>{getGreeting().sub}</div>
+          <div style={s.headerGreeting}>{getGreeting(firstName).heading}</div>
+          <div style={s.headerSub}>{getGreeting(firstName).sub}</div>
         </div>
       </div>
 
       {/* ── SCROLLABLE CONTENT ── */}
       <div style={s.scroll}>
 
-        {/* RACE COUNTDOWN */}
-        <div style={s.raceCard} className="race-card">
-          {/* left — text */}
-          <div style={s.raceLeft}>
-            <div style={s.raceLabel}>Race day countdown</div>
-            <div style={s.raceDays}>{daysLeft}</div>
-            <div style={s.raceSub}>Days until your triathlon</div>
-            <div style={s.raceWks}>
-              {weeksLeft > 0 ? `${weeksLeft} wks · ` : ''}
-              {daysRemainder} day{daysRemainder !== 1 ? 's' : ''} · July 18, 2026
+        {/* RACE COUNTDOWN — only shown for users with a race */}
+        {profile?.has_race && (
+          <div style={s.raceCard} className="race-card">
+            {/* left — text */}
+            <div style={s.raceLeft}>
+              <div style={s.raceLabel}>Race day countdown</div>
+              <div style={s.raceDays}>{daysLeft}</div>
+              <div style={s.raceSub}>Days until your triathlon</div>
+              <div style={s.raceWks}>
+                {weeksLeft > 0 ? `${weeksLeft} wks · ` : ''}
+                {daysRemainder} day{daysRemainder !== 1 ? 's' : ''} · {raceDateDisplay}
+              </div>
+            </div>
+            {/* right — progress ring */}
+            <div style={s.raceRight}>
+              <svg width="96" height="96" viewBox="0 0 96 96">
+                <circle cx="48" cy="48" r={RING_R} fill="none"
+                  stroke="rgba(255,255,255,0.2)" strokeWidth="7" />
+                <circle cx="48" cy="48" r={RING_R} fill="none"
+                  stroke="rgba(255,255,255,0.92)" strokeWidth="7"
+                  strokeLinecap="round"
+                  strokeDasharray={RING_C}
+                  strokeDashoffset={RING_C * (1 - ringProgress)}
+                  transform="rotate(-90 48 48)"
+                  style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)' }}
+                />
+                <g transform="translate(48, 48)">
+                  <text y="-2" textAnchor="middle"
+                    fontSize="18" fontWeight="900" fill="white" fontFamily="Nunito, sans-serif">{pctDone}%</text>
+                  <text y="13" textAnchor="middle"
+                    fontSize="9" fontWeight="700" fill="rgba(255,255,255,0.8)" fontFamily="Nunito, sans-serif">done</text>
+                </g>
+              </svg>
             </div>
           </div>
-          {/* right — progress ring */}
-          <div style={s.raceRight}>
-            <svg width="96" height="96" viewBox="0 0 96 96">
-              <circle cx="48" cy="48" r={RING_R} fill="none"
-                stroke="rgba(255,255,255,0.2)" strokeWidth="7" />
-              <circle cx="48" cy="48" r={RING_R} fill="none"
-                stroke="rgba(255,255,255,0.92)" strokeWidth="7"
-                strokeLinecap="round"
-                strokeDasharray={RING_C}
-                strokeDashoffset={RING_C * (1 - ringProgress)}
-                transform="rotate(-90 48 48)"
-                style={{ transition: 'stroke-dashoffset 1.2s cubic-bezier(0.4,0,0.2,1)' }}
-              />
-              <g transform="translate(48, 48)">
-                <text y="-2" textAnchor="middle"
-                  fontSize="18" fontWeight="900" fill="white" fontFamily="Nunito, sans-serif">{pctDone}%</text>
-                <text y="13" textAnchor="middle"
-                  fontSize="9" fontWeight="700" fill="rgba(255,255,255,0.8)" fontFamily="Nunito, sans-serif">done</text>
-              </g>
-            </svg>
-          </div>
-        </div>
+        )}
 
         {/* QUICK LOG */}
         <button

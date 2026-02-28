@@ -2,10 +2,11 @@ const { createClient } = require('@supabase/supabase-js')
 
 /**
  * POST /api/coach
- * Body: { message, history?, phase?, injuryFlags? }
+ * Body: { message, history?, profile? }
+ * Headers: Authorization: Bearer <supabase-access-token>
  *
- * OpenAI key: process.env.OPENAI_API_KEY → Supabase config table fallback.
- * Workout history: ALL workouts, grouped by week with tiered detail.
+ * Uses the auth token so Supabase RLS automatically returns only that user's workouts.
+ * Builds a dynamic system prompt from the user's profile.
  */
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -38,26 +39,11 @@ function formatWorkoutLine(w) {
   return `${w.discipline}(${detail.trim()}${effortStr})${noteStr}`
 }
 
-// ── Training plan ─────────────────────────────────────────────────────────────
-
-const WEEKLY_PLAN = {
-  monday:    'Strength — lower body (glutes/legs), strong not destroyed',
-  tuesday:   'Run 25–35 min EASY, conversational pace, stop if foot pain changes stride',
-  wednesday: 'Rest',
-  thursday:  'Bike 50–65 min easy aerobic, conversational effort, smooth cadence',
-  friday:    'Swim 30–45 min, technique + comfort, smooth breathing',
-  saturday:  'Bike 65–80 min, easy to steady, relaxed effort',
-  sunday:    'Optional Swim OR Rest',
-}
-const DAY_KEYS   = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-
 // ── Weekly history builder ────────────────────────────────────────────────────
 
 function buildWeeklyHistory(allWorkouts) {
   if (!allWorkouts.length) return '(no workouts logged yet)'
 
-  // Group into week buckets keyed by Monday ISO date
   const weekMap = {}
   for (const w of allWorkouts) {
     const wDate  = new Date(w.date + 'T12:00:00')
@@ -68,7 +54,7 @@ function buildWeeklyHistory(allWorkouts) {
 
   const today      = new Date()
   const thisMonday = toISODate(getMonday(today))
-  const allMondays = Object.keys(weekMap).sort()   // oldest first
+  const allMondays = Object.keys(weekMap).sort()
 
   const lines = []
 
@@ -79,43 +65,23 @@ function buildWeeklyHistory(allWorkouts) {
     const weeksAgo  = Math.round((thisDate - weekStart) / (7 * 86400000))
 
     if (monday === thisMonday) {
-      // CURRENT WEEK — full day-by-day detail
       lines.push(`\n== CURRENT WEEK (w/c ${monday}) ==`)
-      for (let i = 1; i <= 7; i++) {         // Mon=1 … Sun=7
-        const dayIndex = i % 7              // Mon→1, …, Sat→6, Sun→0
-        const dayDate  = new Date(weekStart)
-        dayDate.setDate(dayDate.getDate() + (i - 1))
-        if (dayDate > today) break          // don't show future days
-        const dayISO  = toISODate(dayDate)
-        const dayKey  = DAY_KEYS[dayIndex]
-        const planned = WEEKLY_PLAN[dayKey]
-        const done    = workouts.filter(w => w.date === dayISO)
-        const label   = DAY_LABELS[dayIndex]
-        if (done.length) {
-          lines.push(`  ${label} ${dayISO}: ${done.map(formatWorkoutLine).join('; ')}`)
-        } else {
-          const isRest = dayKey === 'wednesday' || dayKey === 'sunday'
-          lines.push(`  ${label} ${dayISO}: ${isRest ? 'Rest (planned)' : `NOT LOGGED — planned: ${planned}`}`)
-        }
+      const byDate = {}
+      for (const w of workouts) {
+        if (!byDate[w.date]) byDate[w.date] = []
+        byDate[w.date].push(w)
       }
+      const dates = Object.keys(byDate).sort()
+      for (const date of dates) {
+        lines.push(`  ${date}: ${byDate[date].map(formatWorkoutLine).join('; ')}`)
+      }
+      if (workouts.length === 0) lines.push('  (no sessions logged yet this week)')
     } else if (weeksAgo <= 3) {
-      // RECENT WEEKS (1–3 weeks ago) — compact adherence summary
-      const discs       = workouts.map(w => w.discipline)
-      const bikeCount   = discs.filter(d => d === 'bike').length
-      const swimCount   = discs.filter(d => d === 'swim').length
-      const hasRun      = discs.includes('run')
-      const hasStrength = discs.includes('strength')
-      const footPain    = workouts.some(w => w.details?.footPain)
-      const totalMins   = workouts.reduce((s, w) => s + (w.duration_minutes || 0), 0)
-      const adherence   = [
-        hasStrength ? 'strength✓' : 'MISSED strength',
-        hasRun      ? 'run✓'      : 'MISSED run',
-        `bike x${bikeCount} (plan:2)`,
-        `swim x${swimCount} (plan:1+)`,
-      ].join(', ')
-      lines.push(`Week ${monday} (${weeksAgo}wk ago): ${workouts.length} sessions, ${totalMins}min | ${adherence}${footPain ? ' | foot pain noted' : ''}`)
+      const unique   = [...new Set(workouts.map(w => w.discipline))]
+      const totalMin = workouts.reduce((s, w) => s + (w.duration_minutes || 0), 0)
+      const footPain = workouts.some(w => w.details?.footPain)
+      lines.push(`Week ${monday} (${weeksAgo}wk ago): ${workouts.length} sessions (${unique.join('/')}), ${totalMin}min${footPain ? ' | foot pain noted' : ''}`)
     } else {
-      // OLDER WEEKS — single aggregate line
       const discs    = [...new Set(workouts.map(w => w.discipline))].join('/')
       const totalMin = workouts.reduce((s, w) => s + (w.duration_minutes || 0), 0)
       lines.push(`Week ${monday}: ${workouts.length} sessions (${discs}), ${totalMin}min`)
@@ -125,6 +91,67 @@ function buildWeeklyHistory(allWorkouts) {
   return lines.join('\n')
 }
 
+// ── System prompt builder ─────────────────────────────────────────────────────
+
+function buildSystemPrompt(profile, workoutHistory) {
+  const name   = profile.name || 'Athlete'
+  const fname  = name.split(' ')[0]
+  const injury = profile.injury_flags || 'None'
+
+  if (profile.has_race) {
+    const daysToRace = Math.max(
+      Math.ceil((new Date(profile.race_date + 'T12:00:00') - new Date()) / 86400000), 0
+    )
+    const distances = profile.race_distances || {}
+    const distStr   = [
+      distances.swim && `${distances.swim}m swim`,
+      distances.bike && `${distances.bike}km bike`,
+      distances.run  && `${distances.run}km run`,
+    ].filter(Boolean).join(' · ')
+
+    let prompt = `You are "Coach", an expert coach helping ${name} prepare for their race. Warm, direct, data-driven. Protect any flagged injuries.
+
+== ATHLETE ==
+Name: ${name}
+Race: ${profile.race_name || 'Race'}, ${profile.race_date} (${daysToRace} days away)
+Goal: ${profile.race_goal || 'Finish strong'}
+Distances: ${distStr}
+Active injuries / flags: ${injury}
+`
+    if (profile.training_plan) {
+      prompt += `\n== WEEKLY TRAINING PLAN ==\n${profile.training_plan}\n`
+    }
+
+    prompt += `\n== TRAINING LOG ==\n${workoutHistory}
+
+== COACHING RULES ==
+1. Always account for injury flags — never prescribe pain-pushing sessions.
+2. Reference specific dates and workout data. Never be vague.
+3. Evaluate adherence against the plan if one is provided.
+4. Compare performance against target distances when asked about race readiness.
+5. 3–5 sentences unless ${fname} asks for detail.
+6. Use ${fname}'s name occasionally, not every message.`
+    return prompt
+  }
+
+  // Non-race user — generic fitness coach
+  return `You are "Coach", a supportive fitness coach helping ${name}. Warm, encouraging, data-driven.
+
+== ATHLETE ==
+Name: ${name}
+Injury / health flags: ${injury}
+
+== TRAINING LOG ==
+${workoutHistory}
+
+== COACHING RULES ==
+1. Be specific — reference actual workout dates and data.
+2. Help ${fname} build consistency and progressive overload.
+3. Flag anything that looks like overtraining or injury risk.
+4. 3–5 sentences unless ${fname} asks for detail.
+5. Use ${fname}'s name occasionally, not every message.`
+}
+
 // ── Handler ───────────────────────────────────────────────────────────────────
 
 module.exports = async function handler(req, res) {
@@ -132,13 +159,13 @@ module.exports = async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' })
   }
 
-  const { message, history = [], phase = 'Race Mode', injuryFlags = 'None' } = req.body ?? {}
+  const { message, history = [], profile = {} } = req.body ?? {}
 
   if (!message?.trim()) {
     return res.status(400).json({ error: 'message is required' })
   }
 
-  // ── Supabase client ────────────────────────────────────────────────────────
+  // ── Supabase client — forward auth token so RLS filters to this user ────────
   const supabaseUrl = process.env.VITE_SUPABASE_URL
   const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY
 
@@ -146,7 +173,10 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Supabase not configured' })
   }
 
-  const supabase = createClient(supabaseUrl, supabaseKey)
+  const authToken = req.headers.authorization?.split(' ')[1]
+  const supabase  = createClient(supabaseUrl, supabaseKey, {
+    global: { headers: authToken ? { Authorization: `Bearer ${authToken}` } : {} },
+  })
 
   // ── Resolve OpenAI key: process.env → Supabase config table fallback ────────
   let openaiKey = process.env.OPENAI_API_KEY
@@ -167,10 +197,9 @@ module.exports = async function handler(req, res) {
     return res.status(500).json({ error: 'Server configuration error: missing API key' })
   }
 
-  // Cap input length to prevent token abuse
   const safeMessage = message.trim().slice(0, 500)
 
-  // ── Fetch ALL workouts (full history for plan evaluation) ──────────────────
+  // ── Fetch workouts (RLS ensures only this user's data is returned) ──────────
   let allWorkouts = []
   try {
     const { data, error: dbError } = await supabase
@@ -184,45 +213,7 @@ module.exports = async function handler(req, res) {
   }
 
   const workoutHistory = buildWeeklyHistory(allWorkouts)
-
-  const daysToRace = Math.max(
-    Math.ceil((new Date(2026, 6, 18) - new Date()) / 86400000), 0
-  )
-
-  // ── System prompt ──────────────────────────────────────────────────────────
-  const systemPrompt = `You are "Coach", an expert triathlon coach helping Jess prepare for her race. You are warm, direct, and data-driven. You do NOT rewrite the training plan unless there is a compelling reason. You protect Jess's foot and never push through pain.
-
-== ATHLETE ==
-Name: Jess
-Race: Sprint Triathlon, July 18, 2026 (${daysToRace} days away)
-Goal: Finish under 2 hours
-Distances: 500m swim · 25km bike · 5km run
-Target splits: ~15min swim · ~50min bike · ~30min run · ~8min transitions
-Training phase: ${phase}
-Active injuries / flags: ${injuryFlags}
-
-== WEEKLY TRAINING PLAN (this is THE plan — do not change it unless necessary) ==
-Monday:    Strength — lower body (glutes/legs), strong not destroyed
-Tuesday:   Run 25–35 min EASY, conversational pace, stop if foot pain changes stride
-Wednesday: Rest
-Thursday:  Bike 50–65 min easy aerobic, conversational effort, smooth cadence
-Friday:    Swim 30–45 min, technique + comfort, smooth breathing
-Saturday:  Bike 65–80 min, easy to steady, relaxed effort
-Sunday:    Optional Swim OR Rest
-Weekly targets: Strength ×1, Run ×1, Bike ×2, Swim ×1 (×2 if Sunday swim done)
-
-== TRAINING LOG (all sessions since training began) ==
-${workoutHistory}
-
-== COACHING RULES ==
-1. Always account for the foot injury — never prescribe pain-pushing run sessions.
-2. Reference specific dates and workout data when answering. Never be vague.
-3. When asked about race readiness, compare current performance against the target splits above.
-4. Evaluate weekly adherence against the plan — note missed sessions by discipline.
-5. Suggest plan adjustments only when recovery, injury, or significant missed weeks make it necessary.
-6. Keep responses to 3–5 sentences unless Jess asks for a detailed breakdown.
-7. Use Jess's name occasionally, not every message.
-8. If no workouts are logged yet, encourage Jess to start logging and offer a first-week plan.`
+  const systemPrompt   = buildSystemPrompt(profile, workoutHistory)
 
   // ── Conversation history (last 10 turns) ───────────────────────────────────
   const recentHistory = Array.isArray(history)

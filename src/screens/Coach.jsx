@@ -1,9 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { getRecentWorkouts, getThisWeekWorkouts, formatWorkoutDetail, getDiscEmoji, getDiscStyle, formatRelativeDate } from '../lib/workouts'
-
-const RACE_DATE = new Date(2026, 6, 18)
-
-const STORAGE_KEY = 'coach_messages_v1'
+import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 
 const PROMPT_CHIPS = [
   "Am I on track for sub-2hr?",
@@ -26,26 +24,11 @@ function nowStr() {
   return new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
 }
 
-const WELCOME_MSG = {
-  role: 'ai',
-  text: "Hey Jess! I'm caught up on your recent training. What's on your mind?",
-  time: nowStr(),
-}
-
-function loadMessages() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return [WELCOME_MSG]
-    const parsed = JSON.parse(raw)
-    if (Array.isArray(parsed) && parsed.length > 0) return parsed
-  } catch {}
-  return [WELCOME_MSG]
-}
 
 // ── CONTEXT BAR ───────────────────────────────────────────────────────────────
-function ContextBar({ daysToRace, recentWorkouts, thisWeekWorkouts, injury }) {
+function ContextBar({ daysToRace, raceDateLabel, recentWorkouts, thisWeekWorkouts, injury }) {
   const [expanded, setExpanded] = useState(false)
-  const PLAN_SESSIONS = 6   // Mon strength, Tue run, Thu bike, Fri swim, Sat bike (Sun optional)
+  const PLAN_SESSIONS = 6
   const weekDone = thisWeekWorkouts.length
 
   return (
@@ -53,7 +36,7 @@ function ContextBar({ daysToRace, recentWorkouts, thisWeekWorkouts, injury }) {
       <button style={cx.pill} onClick={() => setExpanded(e => !e)}>
         <div style={cx.pillDot} />
         <span style={cx.pillText}>
-          Coach sees: {daysToRace}d to race · this week: {weekDone}/{PLAN_SESSIONS} sessions
+          Coach sees:{daysToRace != null ? ` ${daysToRace}d to race ·` : ''} this week: {weekDone}/{PLAN_SESSIONS} sessions
           {injury ? ' · ⚠️ injury' : ''}
         </span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
@@ -63,10 +46,12 @@ function ContextBar({ daysToRace, recentWorkouts, thisWeekWorkouts, injury }) {
       </button>
       {expanded && (
         <div style={cx.drawer}>
-          <div style={cx.drawerRow}>
-            <span style={cx.drawerLabel}>Race</span>
-            <span style={cx.drawerVal}>July 18, 2026 · {daysToRace} days</span>
-          </div>
+          {raceDateLabel && (
+            <div style={cx.drawerRow}>
+              <span style={cx.drawerLabel}>Race</span>
+              <span style={cx.drawerVal}>{raceDateLabel} · {daysToRace} days</span>
+            </div>
+          )}
           {injury && (
             <div style={cx.drawerRow}>
               <span style={cx.drawerLabel}>Injury</span>
@@ -172,18 +157,40 @@ const ty = { dot: { width: 7, height: 7, borderRadius: 4, background: '#F4A7B9' 
 
 // ── MAIN ─────────────────────────────────────────────────────────────────────
 export default function Coach() {
-  const [messages,         setMessages]         = useState(loadMessages)
+  const { user, profile } = useAuth()
+
+  const firstName   = profile?.name?.split(' ')[0] ?? 'there'
+  const storageKey  = `coach_messages_v1_${user?.id ?? 'anon'}`
+  const injury      = profile?.injury_flags && profile.injury_flags !== 'None' ? profile.injury_flags : null
+  const daysToRace  = profile?.has_race && profile?.race_date
+    ? Math.max(Math.ceil((new Date(profile.race_date + 'T12:00:00') - new Date()) / 86400000), 0)
+    : null
+  const raceDateLabel = profile?.has_race && profile?.race_date
+    ? new Date(profile.race_date + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+    : null
+
+  const welcomeMsg = {
+    role: 'ai',
+    text: `Hey ${firstName}! I'm caught up on your recent training. What's on your mind?`,
+    time: nowStr(),
+  }
+
+  const [messages,         setMessages]         = useState(() => {
+    try {
+      const raw = localStorage.getItem(storageKey)
+      if (!raw) return [welcomeMsg]
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+    } catch {}
+    return [welcomeMsg]
+  })
   const [input,            setInput]            = useState('')
   const [typing,           setTyping]           = useState(false)
   const [recentWorkouts,   setRecentWorkouts]   = useState([])
   const [thisWeekWorkouts, setThisWeekWorkouts] = useState([])
-  const [daysToRace,       setDaysToRace]       = useState(0)
   const scrollRef = useRef(null)
 
-  const INJURY = 'Foot injury — modified run sessions'
-
   useEffect(() => {
-    setDaysToRace(Math.max(Math.ceil((RACE_DATE - new Date()) / 86400000), 0))
     getRecentWorkouts(14).then(setRecentWorkouts).catch(console.error)
     getThisWeekWorkouts().then(setThisWeekWorkouts).catch(console.error)
   }, [])
@@ -191,9 +198,9 @@ export default function Coach() {
   // Persist messages to localStorage whenever they change
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-50)))
+      localStorage.setItem(storageKey, JSON.stringify(messages.slice(-50)))
     } catch {}
-  }, [messages])
+  }, [messages, storageKey])
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -202,7 +209,7 @@ export default function Coach() {
   }, [messages, typing])
 
   function clearConversation() {
-    setMessages([{ ...WELCOME_MSG, time: nowStr() }])
+    setMessages([{ ...welcomeMsg, time: nowStr() }])
   }
 
   async function send(text) {
@@ -220,15 +227,14 @@ export default function Coach() {
       .map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.text }))
 
     try {
+      const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch('/api/coach', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message:     safeText,
-          history,
-          phase:       'Race Mode',
-          injuryFlags: INJURY,
-        }),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ message: safeText, history, profile }),
       })
 
       const data = await res.json()
@@ -276,9 +282,10 @@ export default function Coach() {
       <div style={{ padding: '10px 16px 0' }}>
         <ContextBar
           daysToRace={daysToRace}
+          raceDateLabel={raceDateLabel}
           recentWorkouts={recentWorkouts}
           thisWeekWorkouts={thisWeekWorkouts}
-          injury={INJURY}
+          injury={injury}
         />
       </div>
 

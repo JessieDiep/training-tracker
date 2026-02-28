@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getWeeklyVolumeData, getThisWeekWorkouts, getLastWeekWorkouts, getClimbSends, getTriWorkouts } from '../lib/workouts'
+import { useAuth } from '../contexts/AuthContext'
 
 // Grade → colour mapping (easiest → hardest)
 const GRADE_COLORS = {
@@ -37,7 +38,7 @@ const PB_DISTS = {
   bike: [5, 10, 15, 20, 25],
   run:  [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
 }
-const RACE_DIST = { swim: 500, bike: 25, run: 5 }
+// RACE_DIST is derived from profile inside the component
 
 function formatTime(minutes) {
   const totalSecs = Math.round(minutes * 60)
@@ -154,6 +155,9 @@ function ClimbChart({ data }) {
 
 // ── MAIN ─────────────────────────────────────────────────────────────────────
 export default function Progress() {
+  const { profile } = useAuth()
+  const RACE_DIST = profile?.has_race && profile?.race_distances ? profile.race_distances : null
+
   const [activeDisc,  setActiveDisc]  = useState('swim')
   const [activeWeek,  setActiveWeek]  = useState(null)
   const [activePBDisc,setActivePBDisc]= useState('swim')
@@ -302,7 +306,7 @@ export default function Progress() {
           {PB_DISTS[activePBDisc].map(dist => {
             const dc     = DISC_CONFIG[activePBDisc]
             const time   = pbs[activePBDisc]?.[dist]
-            const isRace = dist === RACE_DIST[activePBDisc]
+            const isRace = RACE_DIST != null && dist === RACE_DIST[activePBDisc]
             const unit   = activePBDisc === 'swim' ? 'm' : 'km'
             return (
               <div key={dist} style={{ ...s.pbRow, background: isRace ? dc.bg : 'transparent' }}>

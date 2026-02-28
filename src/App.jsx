@@ -1,15 +1,27 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
 import BottomNav from './components/BottomNav'
+import Auth from './screens/Auth'
 import Home from './screens/Home'
 import Log from './screens/Log'
 import Progress from './screens/Progress'
 import Coach from './screens/Coach'
 
 function AppLayout() {
+  const { user, loading } = useAuth()
   const location = useLocation()
-  // Derive active tab from pathname
   const path = location.pathname.slice(1) || 'home'
   const activeTab = ['home', 'log', 'progress', 'coach'].includes(path) ? path : 'home'
+
+  if (loading) {
+    return (
+      <div className="pwa-shell">
+        <div className="pwa-phone" style={{ background: '#FFF8FB' }} />
+      </div>
+    )
+  }
+
+  if (!user) return <Auth />
 
   return (
     <div className="pwa-shell">
@@ -31,7 +43,9 @@ function AppLayout() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AppLayout />
+      <AuthProvider>
+        <AppLayout />
+      </AuthProvider>
     </BrowserRouter>
   )
 }
