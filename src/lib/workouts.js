@@ -161,9 +161,11 @@ export async function getClimbSends() {
  * @param {{ discipline, duration, effort, details, notes, mood, date? }} workout
  */
 export async function saveWorkout({ discipline, duration, effort, details, notes, mood, date }) {
+  const { data: { user } } = await supabase.auth.getUser()
   const { data, error } = await supabase
     .from('workouts')
     .insert([{
+      user_id:          user?.id ?? null,
       discipline,
       duration_minutes: duration ?? null,
       effort:           effort   ?? null,
