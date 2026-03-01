@@ -15,10 +15,16 @@ export function AuthProvider({ children }) {
       else setLoading(false)
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null)
-      if (session?.user) fetchProfile(session.user.id)
-      else { setProfile(null); setLoading(false) }
+      if (session?.user) {
+        // Don't re-fetch profile on token refresh — avoids race where profile
+        // briefly becomes null if the query returns before the new token is active
+        if (event !== 'TOKEN_REFRESHED') fetchProfile(session.user.id)
+      } else {
+        setProfile(null)
+        setLoading(false)
+      }
     })
 
     return () => subscription.unsubscribe()
@@ -30,7 +36,7 @@ export function AuthProvider({ children }) {
       .select('*')
       .eq('id', userId)
       .single()
-    setProfile(data ?? null)
+    if (data) setProfile(data)
     setLoading(false)
   }
 

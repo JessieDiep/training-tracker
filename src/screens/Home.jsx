@@ -551,14 +551,24 @@ export default function Home() {
 
   // Fetch workouts on mount (independent of race date)
   useEffect(() => {
-    Promise.all([getThisWeekWorkouts(), getRecentWorkouts(7)])
-      .then(([week, recent]) => {
+    async function load() {
+      try {
+        const [week, recent] = await Promise.all([getThisWeekWorkouts(), getRecentWorkouts(7)])
         setWeekWorkouts(week)
         setRecentWorkouts(recent)
-        setHasMoreWorkouts(recent.length > 0)
-      })
-      .catch(err => { console.error(err); setFetchError(true) })
-      .finally(() => setLoading(false))
+        if (recent.length > 0) {
+          // Lightweight check: does anything exist older than our oldest fetched workout?
+          const { hasMore } = await getWorkoutsBefore(recent[recent.length - 1].date, 0)
+          setHasMoreWorkouts(hasMore)
+        }
+      } catch (err) {
+        console.error(err)
+        setFetchError(true)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
 
     getTrainingStartDate()
       .then(d => { if (d) setTrainingStart(d) })
