@@ -29,9 +29,9 @@ const SEND_STATUS   = [
 ]
 const CLIMB_GRADES = [
   '5.5','5.6','5.7','5.8','5.9',
-  '5.10a','5.10b','5.10c','5.10d',
-  '5.11a','5.11b','5.11c','5.11d',
-  '5.12a','5.12b','5.12c','5.12d',
+  '5.10-','5.10+',
+  '5.11-','5.11+',
+  '5.12-','5.12+',
 ]
 // Exercise names for autocomplete — no hardcoded weights (each user builds their own from history)
 const EXERCISE_NAMES = [
@@ -386,7 +386,7 @@ function RecoverForm({ data, setData }) {
 
 function ClimbForm({ data, setData }) {
   function addRoute() {
-    setData({ ...data, routes: [...data.routes, { grade: '5.10a', attempts: 1, status: 'working' }] })
+    setData({ ...data, routes: [...data.routes, { grade: '5.10-', attempts: 1, status: 'working' }] })
   }
   function updateRoute(i, field, val) {
     const u = [...data.routes]; u[i] = { ...u[i], [field]: val }; setData({ ...data, routes: u })

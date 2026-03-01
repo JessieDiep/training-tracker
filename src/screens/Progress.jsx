@@ -4,23 +4,17 @@ import { useAuth } from '../contexts/AuthContext'
 
 // Grade → colour mapping (easiest → hardest)
 const GRADE_COLORS = {
-  '5.5':  { color: '#A8E6CF', dark: '#2D8B6F' },
-  '5.6':  { color: '#A8E6CF', dark: '#2D8B6F' },
-  '5.7':  { color: '#A8E6CF', dark: '#2D8B6F' },
-  '5.8':  { color: '#FFF3A8', dark: '#B8960A' },
-  '5.9':  { color: '#FFF3A8', dark: '#B8960A' },
-  '5.10a':{ color: '#FFD4A8', dark: '#C47A2B' },
-  '5.10b':{ color: '#FFD4A8', dark: '#C47A2B' },
-  '5.10c':{ color: '#FFD4A8', dark: '#C47A2B' },
-  '5.10d':{ color: '#FFD4A8', dark: '#C47A2B' },
-  '5.11a':{ color: '#FFB8C6', dark: '#C4354F' },
-  '5.11b':{ color: '#FFB8C6', dark: '#C4354F' },
-  '5.11c':{ color: '#FFB8C6', dark: '#C4354F' },
-  '5.11d':{ color: '#FFB8C6', dark: '#C4354F' },
-  '5.12a':{ color: '#C9B8F0', dark: '#6B4FBB' },
-  '5.12b':{ color: '#C9B8F0', dark: '#6B4FBB' },
-  '5.12c':{ color: '#C9B8F0', dark: '#6B4FBB' },
-  '5.12d':{ color: '#C9B8F0', dark: '#6B4FBB' },
+  '5.5':   { color: '#A8E6CF', dark: '#2D8B6F' },
+  '5.6':   { color: '#A8E6CF', dark: '#2D8B6F' },
+  '5.7':   { color: '#A8E6CF', dark: '#2D8B6F' },
+  '5.8':   { color: '#FFF3A8', dark: '#B8960A' },
+  '5.9':   { color: '#FFF3A8', dark: '#B8960A' },
+  '5.10-': { color: '#FFD4A8', dark: '#C47A2B' },
+  '5.10+': { color: '#FFD4A8', dark: '#C47A2B' },
+  '5.11-': { color: '#FFB8C6', dark: '#C4354F' },
+  '5.11+': { color: '#FFB8C6', dark: '#C4354F' },
+  '5.12-': { color: '#C9B8F0', dark: '#6B4FBB' },
+  '5.12+': { color: '#C9B8F0', dark: '#6B4FBB' },
 }
 
 const DISC_CONFIG = {
