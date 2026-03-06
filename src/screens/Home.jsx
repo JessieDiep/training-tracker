@@ -429,14 +429,6 @@ function SettingsSheet({ profile, onClose, onSignOut, onSave }) {
           </>
         )}
 
-        <button
-          style={{ ...ss.saveBtn, opacity: saving ? 0.6 : 1 }}
-          onClick={handleSave}
-          disabled={saving}
-        >
-          {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save settings'}
-        </button>
-
         {/* Training plan */}
         <div style={{ ...ss.sectionLabel, marginTop: 20 }}>Training plan</div>
         <div style={ss.fieldGroup}>
@@ -448,6 +440,14 @@ function SettingsSheet({ profile, onClose, onSignOut, onSave }) {
             onChange={e => setTrainingPlan(e.target.value)}
           />
         </div>
+
+        <button
+          style={{ ...ss.saveBtn, opacity: saving ? 0.6 : 1 }}
+          onClick={handleSave}
+          disabled={saving}
+        >
+          {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save settings'}
+        </button>
 
         {/* FAQ */}
         <div style={{ ...ss.sectionLabel, marginTop: 24 }}>FAQ</div>
