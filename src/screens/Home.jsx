@@ -311,6 +311,7 @@ function SettingsSheet({ profile, onClose, onSignOut, onSave }) {
   const [swimDist, setSwimDist] = useState(String(profile?.race_distances?.swim ?? 500))
   const [bikeDist, setBikeDist] = useState(String(profile?.race_distances?.bike ?? 25))
   const [runDist,  setRunDist]  = useState(String(profile?.race_distances?.run  ?? 5))
+  const [trainingPlan, setTrainingPlan] = useState(profile?.training_plan ?? '')
   const [saving,   setSaving]   = useState(false)
   const [saved,    setSaved]    = useState(false)
   const [faqOpen,  setFaqOpen]  = useState(null)
@@ -329,6 +330,7 @@ function SettingsSheet({ profile, onClose, onSignOut, onSave }) {
         race_date:      hasRace ? raceDate || null  : null,
         race_goal:      hasRace ? raceGoal || null  : null,
         race_distances,
+        training_plan:  trainingPlan.trim() || null,
       })
       setSaved(true)
       setTimeout(() => setSaved(false), 2000)
@@ -432,8 +434,20 @@ function SettingsSheet({ profile, onClose, onSignOut, onSave }) {
           onClick={handleSave}
           disabled={saving}
         >
-          {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save race settings'}
+          {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save settings'}
         </button>
+
+        {/* Training plan */}
+        <div style={{ ...ss.sectionLabel, marginTop: 20 }}>Training plan</div>
+        <div style={ss.fieldGroup}>
+          <div style={ss.fieldLabel}>Weekly plan (used by coach)</div>
+          <textarea
+            style={{ ...ss.input, minHeight: 120, resize: 'vertical', lineHeight: 1.5 }}
+            placeholder={'Monday: Strength\nTuesday: Run 30 min easy\nWednesday: Rest\n...'}
+            value={trainingPlan}
+            onChange={e => setTrainingPlan(e.target.value)}
+          />
+        </div>
 
         {/* FAQ */}
         <div style={{ ...ss.sectionLabel, marginTop: 24 }}>FAQ</div>

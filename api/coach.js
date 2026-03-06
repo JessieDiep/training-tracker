@@ -97,6 +97,8 @@ function buildSystemPrompt(profile, workoutHistory) {
   const name   = profile.name || 'Athlete'
   const fname  = name.split(' ')[0]
   const injury = profile.injury_flags || 'None'
+  const today  = new Date()
+  const todayStr = today.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
 
   if (profile.has_race) {
     const daysToRace = Math.max(
@@ -110,6 +112,9 @@ function buildSystemPrompt(profile, workoutHistory) {
     ].filter(Boolean).join(' · ')
 
     let prompt = `You are "Coach", an expert coach helping ${name} prepare for their race. Warm, direct, data-driven. Protect any flagged injuries.
+
+== TODAY ==
+${todayStr}
 
 == ATHLETE ==
 Name: ${name}
@@ -136,6 +141,9 @@ Active injuries / flags: ${injury}
 
   // Non-race user — generic fitness coach
   return `You are "Coach", a supportive fitness coach helping ${name}. Warm, encouraging, data-driven.
+
+== TODAY ==
+${todayStr}
 
 == ATHLETE ==
 Name: ${name}
