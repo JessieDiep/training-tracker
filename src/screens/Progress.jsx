@@ -250,7 +250,7 @@ export default function Progress() {
       getClimbSends(),
       getTriWorkouts(),
       getStrengthWorkouts(),
-    ]).then(([vol, sends, triW, strengthW]) => {
+    ]).then(async ([vol, sends, triW, strengthW]) => {
       setVolumeData(vol)
       setClimbSends(sends)
       setPbs(computePBs(triW))
