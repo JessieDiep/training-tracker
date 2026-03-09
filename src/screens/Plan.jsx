@@ -104,9 +104,6 @@ export default function Plan() {
     <div style={s.screen}>
       <div style={s.pageHeader}>
         <div style={s.pageTitle}>Weekly Plan</div>
-        <button style={s.regenBtn} onClick={handleRegenerate} disabled={regenLoading}>
-          {regenLoading ? '…' : '↻ Regenerate'}
-        </button>
       </div>
 
       <div style={s.scroll}>
@@ -162,6 +159,12 @@ export default function Plan() {
           <div style={s.empty}>Could not load plan. Tap Regenerate to try again.</div>
         )}
 
+        <div style={s.regenRow}>
+          <button style={s.regenLink} onClick={handleRegenerate} disabled={regenLoading}>
+            {regenLoading ? 'Generating…' : '↻ Regenerate plan'}
+          </button>
+        </div>
+
         <div style={{ height: 32 }} />
       </div>
     </div>
@@ -172,7 +175,8 @@ const s = {
   screen:    { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#FFF8FB', fontFamily: "'Nunito', system-ui, sans-serif" },
   pageHeader:{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px 10px', borderBottom: '1.5px solid #F9D0DF', flexShrink: 0 },
   pageTitle: { fontSize: 17, fontWeight: 900, color: '#8B1A4A' },
-  regenBtn:  { fontSize: 12, fontWeight: 800, color: '#C2185B', background: '#FFE0F0', border: 'none', borderRadius: 8, padding: '5px 12px', cursor: 'pointer', fontFamily: 'inherit' },
+  regenRow:  { textAlign: 'center', marginTop: 16, paddingBottom: 8 },
+  regenLink: { background: 'none', border: 'none', fontSize: 11, fontWeight: 700, color: '#C0A0B8', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' },
   scroll:    { flex: 1, overflowY: 'auto', padding: '14px 16px', scrollbarWidth: 'none' },
 
   discBlock:  { borderRadius: 14, padding: '12px 14px', marginBottom: 12 },

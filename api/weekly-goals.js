@@ -128,7 +128,7 @@ ${workoutHistory}
 }
 
 == RULES ==
-- 2-3 sessions per discipline per week (reduce if athlete shows signs of overtraining or is injured)
+- 1-3 sessions per discipline per week; start conservatively (1 per discipline) when race is >16 weeks away, ramp to 2-3 in the build phase; reduce if athlete shows signs of overtraining or is injured
 - Session types for swim: Technique, Endurance, Threshold, Intervals, Race Pace
 - Session types for bike: Endurance, Tempo, Threshold, Intervals, Recovery Spin
 - Session types for run: Recovery, Tempo, Intervals, Long Run, Brick Run
