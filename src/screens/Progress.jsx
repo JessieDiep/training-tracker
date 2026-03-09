@@ -1,19 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getWeeklyVolumeData, getClimbSends, getTriWorkouts, getStrengthWorkouts } from '../lib/workouts'
 import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
-
-function getMonday(date) {
-  const d = new Date(date)
-  const day = d.getDay()
-  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day))
-  d.setHours(0, 0, 0, 0)
-  return d
-}
-
-function toISODate(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-}
 
 // Grade → colour mapping (easiest → hardest)
 const GRADE_COLORS = {
@@ -240,9 +227,6 @@ export default function Progress() {
   const [strengthData,  setStrengthData]  = useState({})
   const [activeExercise,setActiveExercise]= useState(null)
   const [loading,       setLoading]       = useState(true)
-  const [weeklyGoals,   setWeeklyGoals]   = useState(null)
-  const [weekCompleted, setWeekCompleted] = useState({ swim: 0, bike: 0, run: 0 })
-  const [regenLoading,  setRegenLoading]  = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -250,7 +234,7 @@ export default function Progress() {
       getClimbSends(),
       getTriWorkouts(),
       getStrengthWorkouts(),
-    ]).then(async ([vol, sends, triW, strengthW]) => {
+    ]).then(([vol, sends, triW, strengthW]) => {
       setVolumeData(vol)
       setClimbSends(sends)
       setPbs(computePBs(triW))
@@ -271,20 +255,6 @@ export default function Progress() {
       })
       setThisWeek(summarise(vol.thisWeekRaw))
       setLastWeek(summarise(vol.lastWeekRaw))
-      setWeekCompleted({
-        swim: vol.thisWeekRaw.filter(w => w.discipline === 'swim').length,
-        bike: vol.thisWeekRaw.filter(w => w.discipline === 'bike').length,
-        run:  vol.thisWeekRaw.filter(w => w.discipline === 'run').length,
-      })
-
-      // Fetch weekly goals from Supabase cache
-      const thisMonday = toISODate(getMonday(new Date()))
-      const { data: goalsData } = await supabase
-        .from('weekly_goals')
-        .select('goals')
-        .eq('week_start', thisMonday)
-        .single()
-      if (goalsData?.goals) setWeeklyGoals(goalsData.goals)
     }).catch(console.error).finally(() => setLoading(false))
   }, [])
 
@@ -293,30 +263,6 @@ export default function Progress() {
     const diff = t - l
     const pct  = l > 0 ? Math.round((diff / l) * 100) : (t > 0 ? 100 : 0)
     return { diff, pct, up: diff >= 0 }
-  }
-
-  async function handleRegenerate() {
-    if (regenLoading) return
-    setRegenLoading(true)
-    try {
-      const { data: { session } } = await supabase.auth.getSession()
-      const res = await fetch('/api/weekly-goals', {
-        method: 'POST',
-        headers: {
-          'Content-Type':  'application/json',
-          'Authorization': `Bearer ${session?.access_token}`,
-        },
-        body: JSON.stringify({ profile, force: true }),
-      })
-      if (res.ok) {
-        const json = await res.json()
-        if (json.goals) setWeeklyGoals(json.goals)
-      }
-    } catch (err) {
-      console.error('Failed to regenerate goals:', err)
-    } finally {
-      setRegenLoading(false)
-    }
   }
 
   const disc   = DISC_CONFIG[activeDisc]
@@ -337,64 +283,6 @@ export default function Progress() {
       </div>
 
       <div style={s.scroll}>
-        {/* ── THIS WEEK'S PLAN ── */}
-        <div style={s.sectionHeader}>
-          <span style={s.sectionTitle}>This week's plan</span>
-          <button style={s.regenBtn} onClick={handleRegenerate} disabled={regenLoading}>
-            {regenLoading ? '…' : '↻ Regenerate'}
-          </button>
-        </div>
-
-        {weeklyGoals ? (
-          <>
-            {['swim', 'bike', 'run'].map(disc => {
-              const d        = DISC_CONFIG[disc]
-              const sessions = weeklyGoals[disc] ?? []
-              const done     = weekCompleted[disc] ?? 0
-              return (
-                <div key={disc} style={{ ...s.discGoalBlock, border: `1.5px solid ${d.color}`, background: d.bg }}>
-                  <div style={s.discGoalHeader}>
-                    <span style={s.discGoalEmoji}>{d.emoji}</span>
-                    <span style={s.discGoalTitle}>{d.label}</span>
-                    <span style={{
-                      ...s.discGoalBadge,
-                      background: done >= sessions.length && sessions.length > 0 ? '#E8FAF3' : d.color,
-                      color:      done >= sessions.length && sessions.length > 0 ? '#2D8B6F' : d.dark,
-                    }}>
-                      {done}/{sessions.length} done
-                    </span>
-                  </div>
-                  {sessions.map((session, i) => {
-                    const isCompleted = i < done
-                    return (
-                      <div key={i} style={{ ...s.sessionCard, opacity: isCompleted ? 0.55 : 1 }}>
-                        <div style={s.sessionCardTop}>
-                          <span style={{ ...s.sessionTypePill, background: d.color, color: d.dark }}>
-                            {session.type}
-                          </span>
-                          <span style={s.sessionMeta}>{session.duration} min · Effort {session.effort}/10</span>
-                          {isCompleted && <span style={s.sessionCheck}>✓</span>}
-                        </div>
-                        <div style={s.sessionStructure}>{session.structure}</div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )
-            })}
-            {weeklyGoals.rationale && (
-              <div style={s.rationaleBox}>
-                <span style={s.rationaleLabel}>This week's focus: </span>
-                <span style={s.rationaleText}>{weeklyGoals.rationale}</span>
-              </div>
-            )}
-          </>
-        ) : (
-          <div style={s.goalsEmpty}>
-            {loading ? 'Loading your plan…' : 'Open the Home tab to generate this week\'s plan.'}
-          </div>
-        )}
-
         {/* ── WEEKLY VOLUME CHART ── */}
         <div style={s.sectionHeader}>
           <span style={s.sectionTitle}>Weekly volume</span>
@@ -579,25 +467,6 @@ const s = {
 
   sectionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, marginTop: 18 },
   sectionTitle:  { fontSize: 14, fontWeight: 900, color: '#8B1A4A' },
-  regenBtn:      { fontSize: 11, fontWeight: 800, color: '#C2185B', background: '#FFE0F0', border: 'none', borderRadius: 8, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit' },
-
-  // AI weekly goals
-  discGoalBlock:  { borderRadius: 14, padding: '12px 14px', marginBottom: 10 },
-  discGoalHeader: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 },
-  discGoalEmoji:  { fontSize: 18 },
-  discGoalTitle:  { fontSize: 14, fontWeight: 900, color: '#3A2040', flex: 1 },
-  discGoalBadge:  { fontSize: 10, fontWeight: 800, borderRadius: 8, padding: '3px 9px' },
-  sessionCard:    { background: 'rgba(255,255,255,0.7)', borderRadius: 10, padding: '9px 10px', marginBottom: 7 },
-  sessionCardTop: { display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5, flexWrap: 'wrap' },
-  sessionTypePill:{ fontSize: 11, fontWeight: 800, borderRadius: 7, padding: '3px 9px' },
-  sessionMeta:    { fontSize: 11, fontWeight: 700, color: '#8B4A6E', flex: 1 },
-  sessionCheck:   { fontSize: 14, color: '#2D8B6F', fontWeight: 900 },
-  sessionStructure:{ fontSize: 12, color: '#5A3050', lineHeight: 1.5, fontWeight: 600 },
-  rationaleBox:   { background: '#FFF0F6', borderRadius: 12, padding: '10px 14px', marginBottom: 4, marginTop: 4 },
-  rationaleLabel: { fontSize: 11, fontWeight: 800, color: '#C2185B' },
-  rationaleText:  { fontSize: 12, color: '#5A3050', fontStyle: 'italic', fontWeight: 600 },
-  goalsEmpty:     { textAlign: 'center', color: '#C0A0B8', fontSize: 13, fontWeight: 600, padding: '20px 0' },
-
   discTabs: { display: 'flex', gap: 6, marginBottom: 10 },
   discTab:  { flex: 1, height: 36, borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', fontFamily: 'inherit' },
   chartCard:{ background: '#fff', border: '1.5px solid', borderRadius: 16, padding: '14px 14px 10px', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' },

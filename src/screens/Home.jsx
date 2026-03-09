@@ -794,46 +794,50 @@ export default function Home() {
           <span style={s.logBtnText}>Log workout</span>
         </button>
 
-        {/* THIS WEEK — AI COACHED GOALS */}
-        <div style={s.sectionHeader}>
-          <span style={s.sectionTitle}>This week</span>
-          <span style={s.aiPill}>AI coached</span>
-        </div>
+        {/* THIS WEEK — AI COACHED GOALS (race users only) */}
+        {profile?.has_race && (
+          <>
+            <div style={s.sectionHeader}>
+              <span style={s.sectionTitle}>This week</span>
+              <span style={s.aiPill}>AI coached</span>
+            </div>
 
-        <div style={s.goalsGrid}>
-          {goalsLoading && !weeklyGoals ? (
-            ['🏊', '🚴', '🏃'].map(e => (
-              <div key={e} style={{ ...s.goalCard, background: '#FFF0F5' }}>
-                <div style={s.weekEmoji}>{e}</div>
-                <div style={{ fontSize: 9, color: '#D4B0C0', fontWeight: 700, marginTop: 4 }}>Planning…</div>
-              </div>
-            ))
-          ) : weeklyGoals ? (
-            ['swim', 'bike', 'run'].map(disc => {
-              const d        = DISCIPLINES.find(x => x.id === disc)
-              const sessions = weeklyGoals[disc] ?? []
-              const done     = weekCompleted[disc] ?? 0
-              const pct      = sessions.length > 0 ? Math.min(done / sessions.length, 1) : 0
-              const allDone  = sessions.length > 0 && done >= sessions.length
-              const nextSession = sessions[done]
-              return (
-                <div key={disc} style={{ ...s.goalCard, background: d.bg }} onClick={() => navigate('/progress')}>
-                  <div style={s.weekEmoji}>{d.emoji}</div>
-                  <div style={s.weekLabel}>{d.label}</div>
-                  <div style={s.weekBar}>
-                    <div style={{ ...s.weekBarFill, width: `${pct * 100}%`, background: d.dark }} />
+            <div style={s.goalsGrid}>
+              {goalsLoading && !weeklyGoals ? (
+                ['🏊', '🚴', '🏃'].map(e => (
+                  <div key={e} style={{ ...s.goalCard, background: '#FFF0F5' }}>
+                    <div style={s.weekEmoji}>{e}</div>
+                    <div style={{ fontSize: 9, color: '#D4B0C0', fontWeight: 700, marginTop: 4 }}>Planning…</div>
                   </div>
-                  <div style={{ ...s.weekCount, color: d.dark }}>{done}/{sessions.length}</div>
-                  {allDone ? (
-                    <div style={{ ...s.nextSessionPill, background: '#E8FAF3', color: '#2D8B6F' }}>✓ Done</div>
-                  ) : nextSession ? (
-                    <div style={{ ...s.nextSessionPill, background: d.color, color: d.dark }}>{nextSession.type}</div>
-                  ) : null}
-                </div>
-              )
-            })
-          ) : null}
-        </div>
+                ))
+              ) : weeklyGoals ? (
+                ['swim', 'bike', 'run'].map(disc => {
+                  const d        = DISCIPLINES.find(x => x.id === disc)
+                  const sessions = weeklyGoals[disc] ?? []
+                  const done     = weekCompleted[disc] ?? 0
+                  const pct      = sessions.length > 0 ? Math.min(done / sessions.length, 1) : 0
+                  const allDone  = sessions.length > 0 && done >= sessions.length
+                  const nextSession = sessions[done]
+                  return (
+                    <div key={disc} style={{ ...s.goalCard, background: d.bg }} onClick={() => navigate('/plan')}>
+                      <div style={s.weekEmoji}>{d.emoji}</div>
+                      <div style={s.weekLabel}>{d.label}</div>
+                      <div style={s.weekBar}>
+                        <div style={{ ...s.weekBarFill, width: `${pct * 100}%`, background: d.dark }} />
+                      </div>
+                      <div style={{ ...s.weekCount, color: d.dark }}>{done}/{sessions.length}</div>
+                      {allDone ? (
+                        <div style={{ ...s.nextSessionPill, background: '#E8FAF3', color: '#2D8B6F' }}>✓ Done</div>
+                      ) : nextSession ? (
+                        <div style={{ ...s.nextSessionPill, background: d.color, color: d.dark }}>{nextSession.type}</div>
+                      ) : null}
+                    </div>
+                  )
+                })
+              ) : null}
+            </div>
+          </>
+        )}
 
         {/* RECENT WORKOUTS */}
         <div style={s.sectionHeader}>

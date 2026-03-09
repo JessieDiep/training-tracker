@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 
 const TABS = [
   {
@@ -32,6 +33,32 @@ const TABS = [
         <path d="M8 8H16M8 12H16M8 16H12" stroke={active ? '#C2185B' : '#B8A0B0'} strokeWidth="2" strokeLinecap="round" />
         <circle cx="19" cy="19" r="5" fill={active ? '#C2185B' : '#B8A0B0'} />
         <path d="M17 19H21M19 17V21" stroke="white" strokeWidth="1.8" strokeLinecap="round" />
+      </svg>
+    ),
+  },
+  {
+    id: 'plan',
+    label: 'Plan',
+    path: '/plan',
+    raceOnly: true,
+    icon: (active) => (
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+        <rect x="5" y="3" width="14" height="18" rx="2"
+          stroke={active ? '#C2185B' : '#B8A0B0'}
+          strokeWidth="2"
+          fill={active ? '#F9D0DF' : 'none'}
+        />
+        <path d="M9 2.5h6v3H9z"
+          fill={active ? '#C2185B' : '#B8A0B0'}
+        />
+        <path d="M8 10l1.5 1.5L13 8"
+          stroke={active ? '#C2185B' : '#B8A0B0'}
+          strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+        />
+        <path d="M8 15l1.5 1.5L13 13"
+          stroke={active ? '#C2185B' : '#B8A0B0'}
+          strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+        />
       </svg>
     ),
   },
@@ -74,10 +101,13 @@ const TABS = [
 
 export default function BottomNav({ activeTab }) {
   const navigate = useNavigate()
+  const { profile } = useAuth()
+
+  const visibleTabs = TABS.filter(t => !t.raceOnly || profile?.has_race)
 
   return (
     <div style={styles.nav}>
-      {TABS.map(tab => {
+      {visibleTabs.map(tab => {
         const active = activeTab === tab.id
         return (
           <button

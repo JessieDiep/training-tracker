@@ -4,6 +4,7 @@ import BottomNav from './components/BottomNav'
 import Auth from './screens/Auth'
 import Home from './screens/Home'
 import Log from './screens/Log'
+import Plan from './screens/Plan'
 import Progress from './screens/Progress'
 import Coach from './screens/Coach'
 
@@ -11,7 +12,7 @@ function AppLayout() {
   const { user, loading } = useAuth()
   const location = useLocation()
   const path = location.pathname.slice(1) || 'home'
-  const activeTab = ['home', 'log', 'progress', 'coach'].includes(path) ? path : 'home'
+  const activeTab = ['home', 'log', 'plan', 'progress', 'coach'].includes(path) ? path : 'home'
 
   if (loading) {
     return (
@@ -30,6 +31,7 @@ function AppLayout() {
           <Routes>
             <Route path="/"         element={<Home />} />
             <Route path="/log"      element={<Log />} />
+            <Route path="/plan"     element={<Plan />} />
             <Route path="/progress" element={<Progress />} />
             <Route path="/coach"    element={<Coach />} />
           </Routes>
