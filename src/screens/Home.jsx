@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 import {
   getThisWeekWorkouts,
   getRecentWorkouts,
@@ -13,6 +14,18 @@ import {
   updateWorkout,
   getTrainingStartDate,
 } from '../lib/workouts'
+
+function getMonday(date) {
+  const d = new Date(date)
+  const day = d.getDay()
+  d.setDate(d.getDate() + (day === 0 ? -6 : 1 - day))
+  d.setHours(0, 0, 0, 0)
+  return d
+}
+
+function toISODate(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
 
 const FALLBACK_START = new Date(2026, 0, 5)   // Jan 5 2026 — used if no workouts yet
 const RING_R = 36                              // SVG ring radius (inside 96×96 viewBox)
@@ -35,8 +48,6 @@ const DISCIPLINES = [
   { id: 'recover',  label: 'Recovery', emoji: '🌿', color: '#B8F0E0', dark: '#1A7A5E', bg: '#E8FAF3' },
 ]
 
-// Weekly session goals per discipline
-const WEEKLY_GOALS = { swim: 2, bike: 2, run: 1, strength: 1, climb: 1 }
 
 // ── WORKOUT DETAIL SHEET ─────────────────────────────────────────────────────
 function WorkoutSheet({ workout, onClose, onDeleted, onUpdated }) {
@@ -562,6 +573,8 @@ export default function Home() {
   const [selectedWorkout, setSelectedWorkout] = useState(null)
   const [trainingStart,   setTrainingStart]   = useState(FALLBACK_START)
   const [ringProgress,    setRingProgress]    = useState(0)
+  const [weeklyGoals,     setWeeklyGoals]     = useState(null)
+  const [goalsLoading,    setGoalsLoading]    = useState(true)
 
   // Fetch workouts on mount (independent of race date)
   useEffect(() => {
@@ -582,7 +595,44 @@ export default function Home() {
         setLoading(false)
       }
     }
+
+    async function loadGoals() {
+      try {
+        const thisMonday = toISODate(getMonday(new Date()))
+        // Check Supabase cache first
+        const { data: cached } = await supabase
+          .from('weekly_goals')
+          .select('goals')
+          .eq('week_start', thisMonday)
+          .single()
+        if (cached?.goals) {
+          setWeeklyGoals(cached.goals)
+          setGoalsLoading(false)
+          return
+        }
+        // Not cached — generate via API
+        const { data: { session } } = await supabase.auth.getSession()
+        const res = await fetch('/api/weekly-goals', {
+          method: 'POST',
+          headers: {
+            'Content-Type':  'application/json',
+            'Authorization': `Bearer ${session?.access_token}`,
+          },
+          body: JSON.stringify({ profile }),
+        })
+        if (res.ok) {
+          const json = await res.json()
+          if (json.goals) setWeeklyGoals(json.goals)
+        }
+      } catch (err) {
+        console.error('Failed to load weekly goals:', err)
+      } finally {
+        setGoalsLoading(false)
+      }
+    }
+
     load()
+    loadGoals()
 
     getTrainingStartDate()
       .then(d => { if (d) setTrainingStart(d) })
@@ -670,11 +720,11 @@ export default function Home() {
   const weeksLeft     = Math.floor(daysLeft / 7)
   const daysRemainder = daysLeft % 7
 
-  const weekData = DISCIPLINES.slice(0, 5).map(d => ({
-    id:   d.id,
-    done: weekWorkouts.filter(w => w.discipline === d.id).length,
-    goal: WEEKLY_GOALS[d.id] ?? 2,
-  }))
+  const weekCompleted = {
+    swim: weekWorkouts.filter(w => w.discipline === 'swim').length,
+    bike: weekWorkouts.filter(w => w.discipline === 'bike').length,
+    run:  weekWorkouts.filter(w => w.discipline === 'run').length,
+  }
 
   return (
     <div style={s.screen}>
@@ -744,31 +794,45 @@ export default function Home() {
           <span style={s.logBtnText}>Log workout</span>
         </button>
 
-        {/* THIS WEEK */}
+        {/* THIS WEEK — AI COACHED GOALS */}
         <div style={s.sectionHeader}>
           <span style={s.sectionTitle}>This week</span>
-          <button style={s.seeAllBtn} onClick={() => navigate('/progress')}>See all →</button>
+          <span style={s.aiPill}>AI coached</span>
         </div>
 
-        <div style={s.weekGrid}>
-          {weekData.map(w => {
-            const d   = DISCIPLINES.find(x => x.id === w.id)
-            const pct = Math.min(w.done / w.goal, 1)
-            return (
-              <div key={w.id} style={{ ...s.weekCard, background: d.bg }} className="week-card">
-                <div style={s.weekEmoji}>{d.emoji}</div>
-                <div style={s.weekLabel}>{d.label}</div>
-                {/* UI Kit progress bar */}
-                <div style={s.weekBar}>
-                  <div
-                    style={{ ...s.weekBarFill, width: `${pct * 100}%`, background: d.dark }}
-                    className="uikit-bar-fill"
-                  />
-                </div>
-                <div style={{ ...s.weekCount, color: d.dark }}>{w.done}/{w.goal}</div>
+        <div style={s.goalsGrid}>
+          {goalsLoading && !weeklyGoals ? (
+            ['🏊', '🚴', '🏃'].map(e => (
+              <div key={e} style={{ ...s.goalCard, background: '#FFF0F5' }}>
+                <div style={s.weekEmoji}>{e}</div>
+                <div style={{ fontSize: 9, color: '#D4B0C0', fontWeight: 700, marginTop: 4 }}>Planning…</div>
               </div>
-            )
-          })}
+            ))
+          ) : weeklyGoals ? (
+            ['swim', 'bike', 'run'].map(disc => {
+              const d        = DISCIPLINES.find(x => x.id === disc)
+              const sessions = weeklyGoals[disc] ?? []
+              const done     = weekCompleted[disc] ?? 0
+              const pct      = sessions.length > 0 ? Math.min(done / sessions.length, 1) : 0
+              const allDone  = sessions.length > 0 && done >= sessions.length
+              const nextSession = sessions[done]
+              return (
+                <div key={disc} style={{ ...s.goalCard, background: d.bg }} onClick={() => navigate('/progress')}>
+                  <div style={s.weekEmoji}>{d.emoji}</div>
+                  <div style={s.weekLabel}>{d.label}</div>
+                  <div style={s.weekBar}>
+                    <div style={{ ...s.weekBarFill, width: `${pct * 100}%`, background: d.dark }} />
+                  </div>
+                  <div style={{ ...s.weekCount, color: d.dark }}>{done}/{sessions.length}</div>
+                  {allDone ? (
+                    <div style={{ ...s.nextSessionPill, background: '#E8FAF3', color: '#2D8B6F' }}>✓ Done</div>
+                  ) : nextSession ? (
+                    <div style={{ ...s.nextSessionPill, background: d.color, color: d.dark }}>{nextSession.type}</div>
+                  ) : null}
+                </div>
+              )
+            })
+          ) : null}
         </div>
 
         {/* RECENT WORKOUTS */}
@@ -917,18 +981,20 @@ const s = {
   sectionTitle: { fontSize: 15, fontWeight: 800, color: '#8B1A4A' },
   seeAllBtn:    { background: 'none', border: 'none', fontSize: 11, color: '#C077A0', fontWeight: 700, cursor: 'pointer', padding: 0 },
 
-  // WEEK GRID
-  weekGrid: { display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 22 },
-  weekCard: {
-    borderRadius: 14, padding: '10px 6px 8px',
-    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-    boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+  // AI WEEKLY GOALS
+  aiPill:          { fontSize: 10, fontWeight: 800, color: '#E91E8C', background: '#FFE0F0', borderRadius: 8, padding: '3px 8px' },
+  goalsGrid:       { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 22 },
+  goalCard: {
+    borderRadius: 14, padding: '12px 8px 10px',
+    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+    boxShadow: '0 2px 8px rgba(0,0,0,0.06)', cursor: 'pointer',
   },
-  weekEmoji:   { fontSize: 18 },
-  weekLabel:   { fontSize: 9, fontWeight: 700, color: '#8B4A6E', textTransform: 'uppercase', letterSpacing: 0.3 },
-  weekBar:     { width: '80%', height: 5, background: 'rgba(0,0,0,0.08)', borderRadius: 3, overflow: 'hidden' },
-  weekBarFill: { height: '100%', borderRadius: 3, transition: 'width 0.6s ease' },
-  weekCount:   { fontSize: 11, fontWeight: 800 },
+  weekEmoji:       { fontSize: 18 },
+  weekLabel:       { fontSize: 9, fontWeight: 700, color: '#8B4A6E', textTransform: 'uppercase', letterSpacing: 0.3 },
+  weekBar:         { width: '80%', height: 5, background: 'rgba(0,0,0,0.08)', borderRadius: 3, overflow: 'hidden' },
+  weekBarFill:     { height: '100%', borderRadius: 3, transition: 'width 0.6s ease' },
+  weekCount:       { fontSize: 11, fontWeight: 800 },
+  nextSessionPill: { fontSize: 9, fontWeight: 800, borderRadius: 7, padding: '2px 7px', marginTop: 2 },
 
   // RECENT
   recentList:  { display: 'flex', flexDirection: 'column', gap: 8 },
