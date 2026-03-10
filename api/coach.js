@@ -182,6 +182,10 @@ module.exports = async function handler(req, res) {
   }
 
   const authToken = req.headers.authorization?.split(' ')[1]
+  if (!authToken) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
   const supabase  = createClient(supabaseUrl, supabaseKey, {
     global: { headers: authToken ? { Authorization: `Bearer ${authToken}` } : {} },
   })
