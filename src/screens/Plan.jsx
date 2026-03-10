@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { getThisWeekWorkouts } from '../lib/workouts'
@@ -24,8 +24,10 @@ function toISODate(date) {
 export default function Plan() {
   const { profile } = useAuth()
 
-  const [weeklyGoals,  setWeeklyGoals]  = useState(null)
-  const [accepted,     setAccepted]     = useState(false)
+  const [weeklyGoals,   setWeeklyGoals]  = useState(null)
+  const [accepted,      setAccepted]     = useState(false)
+  const [showConfetti,  setShowConfetti] = useState(false)
+  const confettiTimer = useRef(null)
   const [weekCompleted,setWeekCompleted]= useState({ swim: 0, bike: 0, run: 0 })
   const [regenLoading, setRegenLoading] = useState(false)
   const [loading,      setLoading]      = useState(true)
@@ -111,10 +113,29 @@ export default function Plan() {
       .update({ accepted: true })
       .eq('week_start', thisMonday)
     setAccepted(true)
+    setShowConfetti(true)
+    clearTimeout(confettiTimer.current)
+    confettiTimer.current = setTimeout(() => setShowConfetti(false), 2200)
   }
 
   return (
     <div style={s.screen}>
+      <style>{confettiCss}</style>
+      {showConfetti && (
+        <div style={s.confettiWrap} aria-hidden="true">
+          {CONFETTI_PIECES.map((p, i) => (
+            <div key={i} className="confetti-piece" style={{
+              left: p.x + '%',
+              background: p.color,
+              width: p.size,
+              height: p.size * 0.55,
+              borderRadius: p.round ? '50%' : 2,
+              animationDelay: p.delay + 'ms',
+              animationDuration: p.dur + 'ms',
+            }} />
+          ))}
+        </div>
+      )}
       <div style={s.pageHeader}>
         <div style={s.pageTitle}>Weekly Plan</div>
       </div>
@@ -235,4 +256,30 @@ const s = {
   lockedBanner: { background: '#E8FAF3', borderRadius: 12, padding: '12px 14px', marginTop: 12, textAlign: 'center' },
   lockedTitle:  { fontSize: 13, fontWeight: 800, color: '#2D8B6F' },
   lockedSub:    { fontSize: 11, fontWeight: 600, color: '#5A8A78', marginTop: 3 },
+
+  confettiWrap: { position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden', zIndex: 50 },
 }
+
+// ── CONFETTI ──────────────────────────────────────────────────────────────────
+const COLORS = ['#F48FB1', '#E91E8C', '#C9B8F0', '#A8E6CF', '#FFD4A8', '#FF8FAB', '#fff']
+const CONFETTI_PIECES = Array.from({ length: 48 }, (_, i) => ({
+  x:     Math.random() * 100,
+  size:  6 + Math.random() * 7,
+  color: COLORS[i % COLORS.length],
+  delay: Math.random() * 400,
+  dur:   1400 + Math.random() * 600,
+  round: Math.random() > 0.6,
+}))
+
+const confettiCss = `
+@keyframes confetti-fall {
+  0%   { transform: translateY(-20px) rotate(0deg);   opacity: 1; }
+  80%  { opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+}
+.confetti-piece {
+  position: absolute;
+  top: 0;
+  animation: confetti-fall linear forwards;
+}
+`

@@ -33,10 +33,10 @@ const RING_C = 2 * Math.PI * RING_R           // full circumference ≈ 226.2
 
 function getGreeting(name) {
   const h = new Date().getHours()
-  if (h >= 5  && h < 12) return { heading: `Good morning, ${name}`, sub: "Let's get it" }
-  if (h >= 12 && h < 17) return { heading: `Good afternoon, ${name}`, sub: 'Keep the momentum going' }
-  if (h >= 17 && h < 21) return { heading: `Good evening, ${name}`, sub: 'End the day strong' }
-  return { heading: `Hey ${name}`, sub: 'Rest is training too' }
+  if (h >= 5  && h < 12) return { heading: `Good morning, ${name} ☀️`, sub: "Let's get it" }
+  if (h >= 12 && h < 17) return { heading: `Good afternoon, ${name} 💪`, sub: 'Keep the momentum going' }
+  if (h >= 17 && h < 21) return { heading: `Good evening, ${name} 🌆`, sub: 'End the day strong' }
+  return { heading: `Hey ${name} 🌙`, sub: 'Rest is training too' }
 }
 
 const DISCIPLINES = [
