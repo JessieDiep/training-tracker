@@ -638,10 +638,10 @@ const s = {
   scroll:     { flex: 1, overflowY: 'auto', padding: '14px 18px', scrollbarWidth: 'none' },
   stepHint:   { fontSize: 13, color: '#C077A0', fontWeight: 700, marginBottom: 14 },
 
-  discGrid:  { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10 },
-  discCard:  { borderRadius: 16, padding: '18px 8px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', fontFamily: 'inherit' },
-  discEmoji: { fontSize: 28 },
-  discLabel: { fontSize: 12, fontWeight: 800 },
+  discGrid:  { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 },
+  discCard:  { borderRadius: 18, padding: '24px 8px 18px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', fontFamily: 'inherit' },
+  discEmoji: { fontSize: 36 },
+  discLabel: { fontSize: 14, fontWeight: 800 },
 
   label:    { fontSize: 11, fontWeight: 800, color: '#C077A0', marginBottom: 8, marginTop: 16 },
   optional: { fontWeight: 600, textTransform: 'none', letterSpacing: 0, color: '#D4B0C0', fontSize: 11 },
