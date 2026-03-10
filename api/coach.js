@@ -192,6 +192,7 @@ module.exports = async function handler(req, res) {
 
   // ── Resolve OpenAI key: process.env → Supabase config table fallback ────────
   let openaiKey = process.env.OPENAI_API_KEY
+  console.log('[coach] OpenAI key source:', openaiKey ? 'env var ✓' : 'falling back to Supabase config')
   if (!openaiKey) {
     try {
       const { data, error } = await supabase
