@@ -184,11 +184,11 @@ module.exports = async function handler(req, res) {
     try {
       const { data, error } = await supabase
         .from('weekly_goals')
-        .select('goals')
+        .select('goals, accepted')
         .eq('week_start', thisMonday)
         .single()
       if (!error && data?.goals) {
-        return res.status(200).json({ goals: data.goals })
+        return res.status(200).json({ goals: data.goals, accepted: data.accepted ?? false })
       }
     } catch (e) {
       // Table may not exist yet or no row found — fall through to generation
@@ -295,5 +295,5 @@ module.exports = async function handler(req, res) {
     // Non-fatal — still return the goals
   }
 
-  return res.status(200).json({ goals, generated: true })
+  return res.status(200).json({ goals, accepted: false, generated: true })
 }

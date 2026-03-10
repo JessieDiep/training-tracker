@@ -25,6 +25,7 @@ export default function Plan() {
   const { profile } = useAuth()
 
   const [weeklyGoals,  setWeeklyGoals]  = useState(null)
+  const [accepted,     setAccepted]     = useState(false)
   const [weekCompleted,setWeekCompleted]= useState({ swim: 0, bike: 0, run: 0 })
   const [regenLoading, setRegenLoading] = useState(false)
   const [loading,      setLoading]      = useState(true)
@@ -44,12 +45,13 @@ export default function Plan() {
         const thisMonday = toISODate(getMonday(new Date()))
         const { data: cached } = await supabase
           .from('weekly_goals')
-          .select('goals')
+          .select('goals, accepted')
           .eq('week_start', thisMonday)
           .single()
 
         if (cached?.goals) {
           setWeeklyGoals(cached.goals)
+          setAccepted(cached.accepted ?? false)
           return
         }
 
@@ -66,6 +68,7 @@ export default function Plan() {
         if (res.ok) {
           const json = await res.json()
           if (json.goals) setWeeklyGoals(json.goals)
+          setAccepted(json.accepted ?? false)
         }
       } catch (err) {
         console.error('Failed to load weekly plan:', err)
@@ -92,12 +95,22 @@ export default function Plan() {
       if (res.ok) {
         const json = await res.json()
         if (json.goals) setWeeklyGoals(json.goals)
+        setAccepted(false)
       }
     } catch (err) {
       console.error('Failed to regenerate goals:', err)
     } finally {
       setRegenLoading(false)
     }
+  }
+
+  async function handleAccept() {
+    const thisMonday = toISODate(getMonday(new Date()))
+    await supabase
+      .from('weekly_goals')
+      .update({ accepted: true })
+      .eq('week_start', thisMonday)
+    setAccepted(true)
   }
 
   return (
@@ -154,16 +167,35 @@ export default function Plan() {
                 <span style={s.rationaleText}>{weeklyGoals.rationale}</span>
               </div>
             )}
+
+            {!accepted ? (
+              <>
+                <div style={s.infoBanner}>
+                  ✨ Coach generates a fresh plan every Monday based on your recent sessions and race goal.
+                  Review it, regenerate if you'd like a different one, then accept to lock it in for the week.
+                </div>
+                <button style={s.acceptBtn} onClick={handleAccept}>
+                  Looks good — let's go 💪
+                </button>
+              </>
+            ) : (
+              <div style={s.lockedBanner}>
+                <div style={s.lockedTitle}>✓ Plan locked in for this week</div>
+                <div style={s.lockedSub}>A new plan will be generated next Monday.</div>
+              </div>
+            )}
           </>
         ) : (
           <div style={s.empty}>Could not load plan. Tap Regenerate to try again.</div>
         )}
 
-        <div style={s.regenRow}>
-          <button style={s.regenLink} onClick={handleRegenerate} disabled={regenLoading}>
-            {regenLoading ? 'Generating…' : '↻ Regenerate plan'}
-          </button>
-        </div>
+        {!accepted && (
+          <div style={s.regenRow}>
+            <button style={s.regenLink} onClick={handleRegenerate} disabled={regenLoading}>
+              {regenLoading ? 'Generating…' : '↻ Regenerate plan'}
+            </button>
+          </div>
+        )}
 
         <div style={{ height: 32 }} />
       </div>
@@ -197,4 +229,10 @@ const s = {
   rationaleText: { fontSize: 12, color: '#5A3050', fontStyle: 'italic', fontWeight: 600 },
 
   empty: { textAlign: 'center', color: '#C0A0B8', fontSize: 13, fontWeight: 600, padding: '32px 0' },
+
+  infoBanner:   { background: '#FFF0F6', borderRadius: 12, padding: '10px 14px', fontSize: 12, color: '#8B4A6E', fontWeight: 600, lineHeight: 1.5, marginTop: 12 },
+  acceptBtn:    { width: '100%', background: 'linear-gradient(135deg, #F48FB1, #E91E8C)', border: 'none', borderRadius: 14, padding: '14px 0', fontSize: 16, fontWeight: 800, color: '#fff', cursor: 'pointer', fontFamily: "'Nunito', system-ui, sans-serif", boxShadow: '0 4px 16px rgba(233,30,140,0.25)', marginTop: 16 },
+  lockedBanner: { background: '#E8FAF3', borderRadius: 12, padding: '12px 14px', marginTop: 12, textAlign: 'center' },
+  lockedTitle:  { fontSize: 13, fontWeight: 800, color: '#2D8B6F' },
+  lockedSub:    { fontSize: 11, fontWeight: 600, color: '#5A8A78', marginTop: 3 },
 }
