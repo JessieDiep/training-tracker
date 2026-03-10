@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { getWeeklyVolumeData, getClimbSends, getTriWorkouts, getStrengthWorkouts } from '../lib/workouts'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -87,7 +87,7 @@ function computeStrengthData(workouts) {
 
 function StrengthChart({ points }) {
   if (points.length < 2) return (
-    <div style={{ textAlign: 'center', fontSize: 11, color: '#C077A0', padding: '12px 0' }}>
+    <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--t-muted)', padding: '12px 0' }}>
       Log this exercise at least twice to see your trend.
     </div>
   )
@@ -114,13 +114,13 @@ function StrengthChart({ points }) {
       {points.map((p, i) => (
         <circle key={i} cx={xs[i]} cy={ys[i]} r={4} fill="#B8960A" stroke="#fff" strokeWidth={1.5} />
       ))}
-      <text x={xs[0]} y={H + 4} fontSize={9} fill="#C077A0" textAnchor="middle">{fmtDate(points[0].date)}</text>
+      <text x={xs[0]} y={H + 4} fontSize={9} fill="var(--t-muted)" textAnchor="middle">{fmtDate(points[0].date)}</text>
       {points.length > 2 && (
-        <text x={xs[Math.floor(points.length / 2)]} y={H + 4} fontSize={9} fill="#C077A0" textAnchor="middle">
+        <text x={xs[Math.floor(points.length / 2)]} y={H + 4} fontSize={9} fill="var(--t-muted)" textAnchor="middle">
           {fmtDate(points[Math.floor(points.length / 2)].date)}
         </text>
       )}
-      <text x={xs[xs.length - 1]} y={H + 4} fontSize={9} fill="#C077A0" textAnchor="middle">{fmtDate(points[points.length - 1].date)}</text>
+      <text x={xs[xs.length - 1]} y={H + 4} fontSize={9} fill="var(--t-muted)" textAnchor="middle">{fmtDate(points[points.length - 1].date)}</text>
     </svg>
   )
 }
@@ -293,7 +293,7 @@ export default function Progress() {
             const active = activeDisc === key
             return (
               <button key={key}
-                style={{ ...s.discTab, background: active ? d.color : 'transparent', border: `1.5px solid ${active ? d.dark : '#F4C0D0'}` }}
+                style={{ ...s.discTab, background: active ? d.color : 'transparent', border: `1.5px solid ${active ? d.dark : 'var(--t-border)'}` }}
                 onClick={() => { setActiveDisc(key); setActiveWeek(null) }}>
                 <span style={{ fontSize: 14 }}>{d.emoji}</span>
               </button>
@@ -338,7 +338,7 @@ export default function Progress() {
             const active = activePBDisc === disc
             return (
               <button key={disc}
-                style={{ ...s.pbTab, background: active ? d.color : 'transparent', border: `1.5px solid ${active ? d.dark : '#F4C0D0'}` }}
+                style={{ ...s.pbTab, background: active ? d.color : 'transparent', border: `1.5px solid ${active ? d.dark : 'var(--t-border)'}` }}
                 onClick={() => setActivePBDisc(disc)}>
                 <span>{d.emoji}</span>
                 <span style={{ fontSize: 11, fontWeight: 800, color: active ? d.dark : '#B8A0B0' }}>{d.label}</span>
@@ -355,7 +355,7 @@ export default function Progress() {
             return (
               <div key={dist} style={{ ...s.pbRow, background: isRace ? dc.bg : 'transparent' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ ...s.pbDist, color: isRace ? dc.dark : '#5A3050' }}>
+                  <span style={{ ...s.pbDist, color: isRace ? dc.dark : 'var(--t-subtext)' }}>
                     {dist}{unit}
                   </span>
                   {isRace && <span style={{ ...s.racePill, background: dc.color, color: dc.dark }}>race</span>}
@@ -415,7 +415,7 @@ export default function Progress() {
                     </>
                   )}
                   {points.length === 1 && (
-                    <div style={{ fontSize: 11, color: '#C077A0', marginTop: 8 }}>
+                    <div style={{ fontSize: 11, color: 'var(--t-muted)', marginTop: 8 }}>
                       Log this exercise at least twice to see your trend.
                     </div>
                   )}
@@ -460,25 +460,25 @@ export default function Progress() {
 
 // ── STYLES ────────────────────────────────────────────────────────────────────
 const s = {
-  screen:    { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#FFF8FB', fontFamily: "'Nunito', system-ui, sans-serif" },
-  pageHeader:{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px 20px 10px', borderBottom: '1.5px solid #F9D0DF', flexShrink: 0 },
-  pageTitle: { fontSize: 17, fontWeight: 900, color: '#8B1A4A' },
+  screen:    { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--t-bg)', fontFamily: "'Nunito', system-ui, sans-serif" },
+  pageHeader:{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '12px 20px 10px', borderBottom: '1.5px solid var(--t-border)', flexShrink: 0 },
+  pageTitle: { fontSize: 17, fontWeight: 900, color: 'var(--t-dark)' },
   scroll:    { flex: 1, overflowY: 'auto', padding: '14px 16px', scrollbarWidth: 'none' },
 
   sectionHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, marginTop: 18 },
-  sectionTitle:  { fontSize: 14, fontWeight: 900, color: '#8B1A4A' },
+  sectionTitle:  { fontSize: 14, fontWeight: 900, color: 'var(--t-dark)' },
   discTabs: { display: 'flex', gap: 6, marginBottom: 10 },
   discTab:  { flex: 1, height: 36, borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s', fontFamily: 'inherit' },
   chartCard:{ background: '#fff', border: '1.5px solid', borderRadius: 16, padding: '14px 14px 10px', boxShadow: '0 2px 12px rgba(0,0,0,0.05)' },
   chartHeader:{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 },
   chartTitle: { fontSize: 14, fontWeight: 900 },
-  chartUnit:  { fontSize: 10, color: '#C077A0', fontWeight: 700 },
+  chartUnit:  { fontSize: 10, color: 'var(--t-muted)', fontWeight: 700 },
   weekNote:   { fontSize: 11, fontWeight: 800, textAlign: 'center', marginTop: 6 },
-  climbNote:  { fontSize: 10, color: '#C077A0', fontWeight: 700, textAlign: 'center', marginTop: 4 },
+  climbNote:  { fontSize: 10, color: 'var(--t-muted)', fontWeight: 700, textAlign: 'center', marginTop: 4 },
 
   sendCard:   { background: '#fff', borderRadius: 16, padding: '12px 14px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', display: 'flex', flexDirection: 'column', gap: 8 },
   sendRow:    { display: 'flex', alignItems: 'center', gap: 8 },
-  sendGrade:  { fontSize: 11, fontWeight: 800, color: '#8B1A4A', width: 36, flexShrink: 0 },
+  sendGrade:  { fontSize: 11, fontWeight: 800, color: 'var(--t-dark)', width: 36, flexShrink: 0 },
   sendBarWrap:{ flex: 1, height: 14, background: '#F4D0DC', borderRadius: 7, overflow: 'hidden' },
   sendBar:    { height: '100%', borderRadius: 7, transition: 'width 0.5s ease' },
   sendCount:  { fontSize: 12, fontWeight: 900, width: 20, textAlign: 'right', flexShrink: 0 },
@@ -487,13 +487,13 @@ const s = {
   pbTabs:     { display: 'flex', gap: 6, marginBottom: 10 },
   pbTab:      { flex: 1, height: 38, borderRadius: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, transition: 'all 0.15s', fontFamily: 'inherit' },
   pbCard:     { background: '#fff', borderRadius: 16, padding: '4px 14px', boxShadow: '0 2px 10px rgba(0,0,0,0.05)', overflow: 'hidden' },
-  pbRow:      { display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #F9D0DF', borderRadius: 8, margin: '0 -4px', padding: '10px 4px' },
+  pbRow:      { display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--t-border)', borderRadius: 8, margin: '0 -4px', padding: '10px 4px' },
   pbDist:     { fontSize: 13, fontWeight: 800 },
   pbTime:     { fontSize: 15, fontWeight: 900, letterSpacing: -0.3 },
   racePill:   { fontSize: 9, fontWeight: 800, borderRadius: 6, padding: '2px 6px', letterSpacing: 0.2, textTransform: 'uppercase' },
   pbEmpty:    { fontSize: 12, color: '#C0A0B8', fontWeight: 600, textAlign: 'center', padding: '16px 0' },
 
-  exerciseSelect:  { width: '100%', padding: '9px 12px', borderRadius: 12, border: '1.5px solid #F4C0D0', background: '#fff', fontSize: 13, fontWeight: 700, color: '#C077A0', fontFamily: 'inherit', cursor: 'pointer', marginBottom: 10, appearance: 'auto' },
+  exerciseSelect:  { width: '100%', padding: '9px 12px', borderRadius: 12, border: '1.5px solid var(--t-border)', background: '#fff', fontSize: 13, fontWeight: 700, color: 'var(--t-muted)', fontFamily: 'inherit', cursor: 'pointer', marginBottom: 10, appearance: 'auto' },
   strengthBest:    { display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 10 },
   strengthBestNum: { fontSize: 36, fontWeight: 900, color: '#B8960A', lineHeight: 1 },
   strengthBestUnit:{ fontSize: 16, fontWeight: 700, color: '#B8960A' },

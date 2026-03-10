@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import BottomNav from './components/BottomNav'
@@ -7,6 +8,7 @@ import Log from './screens/Log'
 import Plan from './screens/Plan'
 import Progress from './screens/Progress'
 import Coach from './screens/Coach'
+import { applyTheme, loadTheme } from './lib/themes'
 
 function AppLayout() {
   const { user, loading } = useAuth()
@@ -14,10 +16,12 @@ function AppLayout() {
   const path = location.pathname.slice(1) || 'home'
   const activeTab = ['home', 'log', 'plan', 'progress', 'coach'].includes(path) ? path : 'home'
 
+  useEffect(() => { applyTheme(loadTheme()) }, [])
+
   if (loading) {
     return (
       <div className="pwa-shell">
-        <div className="pwa-phone" style={{ background: '#FFF8FB' }} />
+        <div className="pwa-phone" style={{ background: 'var(--t-bg, #FFF8FB)' }} />
       </div>
     )
   }

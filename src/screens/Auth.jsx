@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 
 export default function Auth() {
@@ -159,7 +159,7 @@ export default function Auth() {
                   <div style={s.toggleRowTitle}>Training for a race?</div>
                   <div style={s.toggleRowSub}>Enables race countdown, target splits & race highlights in personal bests</div>
                 </div>
-                <div style={{ ...s.pill, background: hasRace ? '#E91E8C' : '#E0D0D8' }}>
+                <div style={{ ...s.pill, background: hasRace ? 'var(--t-accent)' : '#E0D0D8' }}>
                   <div style={{ ...s.pillDot, transform: hasRace ? 'translateX(20px)' : 'translateX(0)' }} />
                 </div>
               </div>
@@ -286,7 +286,7 @@ const s = {
   phone: {
     width: '100%',
     maxWidth: 375,
-    background: '#FFF8FB',
+    background: 'var(--t-bg)',
     borderRadius: 28,
     boxShadow: '0 16px 48px rgba(194,24,91,0.15)',
     overflow: 'hidden',
@@ -307,12 +307,12 @@ const s = {
   appName: {
     fontSize: 22,
     fontWeight: 900,
-    color: '#8B1A4A',
+    color: 'var(--t-dark)',
     letterSpacing: -0.5,
   },
   appSub: {
     fontSize: 13,
-    color: '#C077A0',
+    color: 'var(--t-muted)',
     marginTop: 2,
   },
   toggle: {
@@ -331,23 +331,23 @@ const s = {
     padding: '8px 0',
     fontSize: 14,
     fontWeight: 700,
-    color: '#C077A0',
+    color: 'var(--t-muted)',
     cursor: 'pointer',
     fontFamily: "'Nunito', system-ui, sans-serif",
     transition: 'all 0.15s',
   },
   toggleActive: {
     background: '#fff',
-    color: '#C2185B',
+    color: 'var(--t-active)',
     boxShadow: '0 2px 8px rgba(194,24,91,0.15)',
   },
   errorBox: {
     background: '#FFEEF3',
-    border: '1.5px solid #F4C0D0',
+    border: '1.5px solid var(--t-border)',
     borderRadius: 10,
     padding: '10px 14px',
     fontSize: 13,
-    color: '#C2185B',
+    color: 'var(--t-active)',
     fontWeight: 600,
     marginBottom: 16,
   },
@@ -359,20 +359,20 @@ const s = {
   label: {
     fontSize: 12,
     fontWeight: 700,
-    color: '#8B1A4A',
+    color: 'var(--t-dark)',
     marginTop: 12,
     marginBottom: 4,
   },
   optional: {
     fontWeight: 400,
-    color: '#C077A0',
+    color: 'var(--t-muted)',
   },
   input: {
     width: '100%',
     padding: '11px 14px',
     borderRadius: 12,
-    border: '1.5px solid #F4C0D0',
-    background: '#FFF8FB',
+    border: '1.5px solid var(--t-border)',
+    background: 'var(--t-bg)',
     fontSize: 14,
     color: '#3D0A1E',
     fontFamily: "'Nunito', system-ui, sans-serif",
@@ -383,8 +383,8 @@ const s = {
     width: '100%',
     padding: '11px 14px',
     borderRadius: 12,
-    border: '1.5px solid #F4C0D0',
-    background: '#FFF8FB',
+    border: '1.5px solid var(--t-border)',
+    background: 'var(--t-bg)',
     fontSize: 14,
     color: '#3D0A1E',
     fontFamily: "'Nunito', system-ui, sans-serif",
@@ -402,11 +402,11 @@ const s = {
     padding: '14px 14px',
     marginTop: 14,
     cursor: 'pointer',
-    border: '1.5px solid #F4C0D0',
+    border: '1.5px solid var(--t-border)',
   },
   toggleRowText: { flex: 1 },
-  toggleRowTitle: { fontSize: 14, fontWeight: 700, color: '#8B1A4A' },
-  toggleRowSub:   { fontSize: 11, color: '#C077A0', marginTop: 2 },
+  toggleRowTitle: { fontSize: 14, fontWeight: 700, color: 'var(--t-dark)' },
+  toggleRowSub:   { fontSize: 11, color: 'var(--t-muted)', marginTop: 2 },
   pill: {
     width: 44,
     height: 24,
@@ -431,7 +431,7 @@ const s = {
     borderRadius: 14,
     padding: '8px 14px 14px',
     marginTop: 4,
-    border: '1.5px solid #F4C0D0',
+    border: '1.5px solid var(--t-border)',
     display: 'flex',
     flexDirection: 'column',
     gap: 4,
@@ -445,18 +445,18 @@ const s = {
     flex: 1,
     padding: '8px 4px',
     borderRadius: 10,
-    border: '1.5px solid #F4C0D0',
-    background: '#FFF8FB',
+    border: '1.5px solid var(--t-border)',
+    background: 'var(--t-bg)',
     fontSize: 12,
     fontWeight: 700,
-    color: '#C077A0',
+    color: 'var(--t-muted)',
     cursor: 'pointer',
     fontFamily: "'Nunito', system-ui, sans-serif",
     transition: 'all 0.15s',
   },
   raceTypeBtnActive: {
-    background: 'linear-gradient(135deg, #F48FB1, #E91E8C)',
-    border: '1.5px solid #E91E8C',
+    background: 'linear-gradient(135deg, var(--t-soft), var(--t-accent))',
+    border: '1.5px solid var(--t-accent)',
     color: '#fff',
   },
   distRow: {
@@ -474,8 +474,8 @@ const s = {
     width: '100%',
     padding: '9px 8px',
     borderRadius: 10,
-    border: '1.5px solid #F4C0D0',
-    background: '#FFF8FB',
+    border: '1.5px solid var(--t-border)',
+    background: 'var(--t-bg)',
     fontSize: 15,
     fontWeight: 700,
     color: '#3D0A1E',
@@ -487,7 +487,7 @@ const s = {
   distUnit: {
     fontSize: 10,
     fontWeight: 700,
-    color: '#C077A0',
+    color: 'var(--t-muted)',
   },
   submitBtn: {
     marginTop: 20,
@@ -495,7 +495,7 @@ const s = {
     padding: '14px 0',
     borderRadius: 14,
     border: 'none',
-    background: 'linear-gradient(135deg, #F48FB1, #E91E8C)',
+    background: 'linear-gradient(135deg, var(--t-soft), var(--t-accent))',
     color: '#fff',
     fontSize: 16,
     fontWeight: 800,

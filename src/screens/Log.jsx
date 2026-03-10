@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+﻿import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { saveWorkout } from '../lib/workouts'
 import { useAuth } from '../contexts/AuthContext'
@@ -87,19 +87,19 @@ function NumKeypad({ value, onConfirm, onClose, unit = '', allowDecimal = false 
 
 const kp = {
   overlay:    { position: 'absolute', inset: 0, background: 'rgba(139,26,74,0.25)', backdropFilter: 'blur(3px)', zIndex: 100, display: 'flex', alignItems: 'flex-end' },
-  sheet:      { width: '100%', background: '#FFF8FB', borderRadius: '22px 22px 0 0', padding: '16px 16px 28px', boxShadow: '0 -6px 24px rgba(194,24,91,0.12)' },
-  display:    { textAlign: 'center', padding: '10px 0 14px', borderBottom: '1.5px solid #F4C0D0', marginBottom: 14 },
-  displayNum: { fontSize: 40, fontWeight: 900, color: '#8B1A4A' },
-  displayUnit:{ fontSize: 18, fontWeight: 700, color: '#C077A0', marginLeft: 6 },
+  sheet:      { width: '100%', background: 'var(--t-bg)', borderRadius: '22px 22px 0 0', padding: '16px 16px 28px', boxShadow: '0 -6px 24px var(--t-phone-shadow)' },
+  display:    { textAlign: 'center', padding: '10px 0 14px', borderBottom: '1.5px solid var(--t-border)', marginBottom: 14 },
+  displayNum: { fontSize: 40, fontWeight: 900, color: 'var(--t-dark)' },
+  displayUnit:{ fontSize: 18, fontWeight: 700, color: 'var(--t-muted)', marginLeft: 6 },
   grid:       { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 },
-  key:        { background: '#FFF0F5', border: '1.5px solid #F4C0D0', borderRadius: 12, height: 52, fontSize: 20, fontWeight: 700, color: '#5A3050', cursor: 'pointer', fontFamily: 'inherit' },
+  key:        { background: 'var(--t-surface)', border: '1.5px solid var(--t-border)', borderRadius: 12, height: 52, fontSize: 20, fontWeight: 700, color: 'var(--t-subtext)', cursor: 'pointer', fontFamily: 'inherit' },
   keyEmpty:   { background: 'transparent', border: 'none', cursor: 'default' },
-  keyDel:     { background: '#F9D0DF', color: '#C2185B' },
-  doneBtn:    { width: '100%', marginTop: 12, background: 'linear-gradient(135deg, #F48FB1, #E91E8C)', border: 'none', borderRadius: 14, color: '#fff', fontSize: 17, fontWeight: 800, padding: '13px 0', cursor: 'pointer', fontFamily: 'inherit' },
+  keyDel:     { background: 'var(--t-border)', color: 'var(--t-active)' },
+  doneBtn:    { width: '100%', marginTop: 12, background: 'linear-gradient(135deg, var(--t-soft), var(--t-accent))', border: 'none', borderRadius: 14, color: '#fff', fontSize: 17, fontWeight: 800, padding: '13px 0', cursor: 'pointer', fontFamily: 'inherit' },
 }
 
 // ── TAPPABLE FIELD ────────────────────────────────────────────────────────────
-function TapField({ value, onConfirm, unit, allowDecimal, accentColor = '#F4A7B9', darkColor = '#8B1A4A' }) {
+function TapField({ value, onConfirm, unit, allowDecimal, accentColor = 'var(--t-mid)', darkColor = 'var(--t-dark)' }) {
   const [open, setOpen] = useState(false)
   return (
     <>
@@ -138,7 +138,7 @@ function EffortSlider({ value, onChange }) {
     onChange(getVal(e.touches[0].clientX))
   }
   const pct   = ((value - 1) / 9) * 100
-  const color = value <= 3 ? '#A8E6CF' : value <= 6 ? '#F4A7B9' : value <= 8 ? '#FF8FAB' : '#C2185B'
+  const color = value <= 3 ? '#A8E6CF' : value <= 6 ? 'var(--t-mid)' : value <= 8 ? 'var(--t-soft)' : 'var(--t-active)'
   return (
     <div style={s.sliderWrap}>
       <div ref={trackRef} style={s.sliderTrack} onMouseDown={onMouseDown} onTouchStart={onTouchStart}>
@@ -166,7 +166,7 @@ function PresetRow({ presets, value, onSelect, format, darkColor }) {
         const active = value === p
         return (
           <button key={p}
-            style={{ ...s.presetBtn, background: active ? '#FFF0F5' : '#FFF5F8', border: `1.5px solid ${active ? darkColor : '#F4C0D0'}`, color: active ? darkColor : '#B8A0B0', fontWeight: active ? 800 : 600 }}
+            style={{ ...s.presetBtn, background: active ? 'var(--t-surface)' : 'var(--t-surface)', border: `1.5px solid ${active ? darkColor : 'var(--t-border)'}`, color: active ? darkColor : '#B8A0B0', fontWeight: active ? 800 : 600 }}
             onClick={() => onSelect(p)}>
             {format ? format(p) : p}
           </button>
@@ -183,7 +183,7 @@ function ToggleGroup({ options, value, onChange, multi = false, accentBg, darkCo
         const active = multi ? value.includes(opt) : value === opt
         return (
           <button key={opt}
-            style={{ ...s.toggleBtn, background: active ? accentBg : '#FFF5F8', border: `1.5px solid ${active ? darkColor : '#F4C0D0'}`, color: active ? darkColor : '#B8A0B0', fontWeight: active ? 800 : 600 }}
+            style={{ ...s.toggleBtn, background: active ? accentBg : 'var(--t-surface)', border: `1.5px solid ${active ? darkColor : 'var(--t-border)'}`, color: active ? darkColor : '#B8A0B0', fontWeight: active ? 800 : 600 }}
             onClick={() => {
               if (multi) onChange(active ? value.filter(v => v !== opt) : [...value, opt])
               else       onChange(opt)
@@ -240,9 +240,9 @@ function RunForm({ data, setData }) {
       <ToggleGroup options={RUN_SURFACES} value={data.surface} onChange={v => setData({ ...data, surface: v })} accentBg="#FFE0B8" darkColor="#C47A2B" />
       <div style={s.flagRow}>
         <button
-          style={{ ...s.flagBtn, background: data.footPain ? '#FFE8EE' : '#FFF5F8', border: `1.5px solid ${data.footPain ? '#C4354F' : '#F4C0D0'}` }}
+          style={{ ...s.flagBtn, background: data.footPain ? '#FFE8EE' : 'var(--t-surface)', border: `1.5px solid ${data.footPain ? '#C4354F' : 'var(--t-border)'}` }}
           onClick={() => setData({ ...data, footPain: !data.footPain })}>
-          <div style={{ ...s.flagCheck, background: data.footPain ? '#C4354F' : 'transparent', border: `2px solid ${data.footPain ? '#C4354F' : '#F4A7B9'}` }}>
+          <div style={{ ...s.flagCheck, background: data.footPain ? '#C4354F' : 'transparent', border: `2px solid ${data.footPain ? '#C4354F' : 'var(--t-mid)'}` }}>
             {data.footPain && <svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 5L4 7L8 3" stroke="white" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/></svg>}
           </div>
           <span style={{ fontSize: 13, fontWeight: 700, color: data.footPain ? '#C4354F' : '#B8A0B0' }}>Modified / foot pain flagged</span>
@@ -349,7 +349,7 @@ function StrengthForm({ data, setData, savedExercises, onSaveExercise }) {
             <button key={e} style={s.suggestionBtn} onClick={() => pickExercise(e)}>{e}</button>
           ))}
           {!suggestions.find(e => e.toLowerCase() === exInput.toLowerCase()) && (
-            <button style={{ ...s.suggestionBtn, color: '#C2185B', fontWeight: 700 }} onClick={() => pickExercise(exInput)}>
+            <button style={{ ...s.suggestionBtn, color: 'var(--t-active)', fontWeight: 700 }} onClick={() => pickExercise(exInput)}>
               + add "{exInput}"
             </button>
           )}
@@ -425,7 +425,7 @@ function ClimbForm({ data, setData }) {
           <div style={{ ...s.toggleRow, marginTop: 10 }}>
             {SEND_STATUS.map(st => (
               <button key={st.id}
-                style={{ ...s.toggleBtn, background: route.status === st.id ? st.bg : '#FFF5F8', border: `1.5px solid ${route.status === st.id ? st.color : '#F4C0D0'}`, color: route.status === st.id ? st.color : '#B8A0B0', fontWeight: route.status === st.id ? 800 : 600 }}
+                style={{ ...s.toggleBtn, background: route.status === st.id ? st.bg : 'var(--t-surface)', border: `1.5px solid ${route.status === st.id ? st.color : 'var(--t-border)'}`, color: route.status === st.id ? st.color : '#B8A0B0', fontWeight: route.status === st.id ? 800 : 600 }}
                 onClick={() => updateRoute(i, 'status', st.id)}>
                 {st.label}
               </button>
@@ -561,7 +561,7 @@ export default function Log() {
         {step !== 'discipline' ? (
           <button style={s.backBtn} onClick={() => setStep('discipline')}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path d="M15 18L9 12L15 6" stroke="#C2185B" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M15 18L9 12L15 6" stroke="var(--t-active)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
         ) : (
@@ -579,8 +579,8 @@ export default function Log() {
           <div style={s.savedState}>
             <div className="pop-anim">
               <svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-                <circle cx="32" cy="32" r="30" stroke="#F48FB1" strokeWidth="3"/>
-                <path d="M20 32L28 40L44 24" stroke="#C2185B" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="32" cy="32" r="30" stroke="var(--t-soft)" strokeWidth="3"/>
+                <path d="M20 32L28 40L44 24" stroke="var(--t-active)" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
             <div style={s.savedTitle}>Logged!</div>
@@ -631,22 +631,22 @@ export default function Log() {
 
 // ── STYLES ────────────────────────────────────────────────────────────────────
 const s = {
-  screen:     { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#FFF8FB', fontFamily: "'Nunito', system-ui, sans-serif", position: 'relative' },
-  pageHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px 10px', borderBottom: '1.5px solid #F9D0DF', flexShrink: 0 },
-  backBtn:    { width: 32, height: 32, background: '#F9D0DF', border: 'none', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
-  pageTitle:  { fontSize: 17, fontWeight: 900, color: '#8B1A4A' },
+  screen:     { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--t-bg)', fontFamily: "'Nunito', system-ui, sans-serif", position: 'relative' },
+  pageHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px 10px', borderBottom: '1.5px solid var(--t-border)', flexShrink: 0 },
+  backBtn:    { width: 32, height: 32, background: 'var(--t-border)', border: 'none', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' },
+  pageTitle:  { fontSize: 17, fontWeight: 900, color: 'var(--t-dark)' },
   scroll:     { flex: 1, overflowY: 'auto', padding: '14px 18px', scrollbarWidth: 'none' },
-  stepHint:   { fontSize: 13, color: '#C077A0', fontWeight: 700, marginBottom: 14 },
+  stepHint:   { fontSize: 13, color: 'var(--t-muted)', fontWeight: 700, marginBottom: 14 },
 
   discGrid:  { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 },
   discCard:  { borderRadius: 18, padding: '24px 8px 18px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', fontFamily: 'inherit' },
   discEmoji: { fontSize: 36 },
   discLabel: { fontSize: 14, fontWeight: 800 },
 
-  label:    { fontSize: 11, fontWeight: 800, color: '#C077A0', marginBottom: 8, marginTop: 16 },
+  label:    { fontSize: 11, fontWeight: 800, color: 'var(--t-muted)', marginBottom: 8, marginTop: 16 },
   optional: { fontWeight: 600, textTransform: 'none', letterSpacing: 0, color: '#D4B0C0', fontSize: 11 },
 
-  tapField:     { display: 'flex', alignItems: 'center', gap: 6, background: '#FFF0F5', border: '1.5px solid #F4A7B9', borderRadius: 12, padding: '10px 14px', cursor: 'pointer', width: '100%', fontFamily: 'inherit' },
+  tapField:     { display: 'flex', alignItems: 'center', gap: 6, background: 'var(--t-surface)', border: '1.5px solid var(--t-mid)', borderRadius: 12, padding: '10px 14px', cursor: 'pointer', width: '100%', fontFamily: 'inherit' },
   tapFieldNum:  { fontSize: 24, fontWeight: 900 },
   tapFieldUnit: { fontSize: 13, fontWeight: 700 },
 
@@ -661,11 +661,11 @@ const s = {
   sliderFill:   { position: 'absolute', left: 0, top: 0, height: '100%', borderRadius: 5, transition: 'background 0.2s' },
   sliderThumb:  { position: 'absolute', top: '50%', transform: 'translateY(-50%)', width: 28, height: 28, borderRadius: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.18)', border: '3px solid white', transition: 'background 0.2s' },
   sliderLabels: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
-  sliderLabelL: { fontSize: 11, color: '#C077A0', fontWeight: 700 },
-  sliderLabelR: { fontSize: 11, color: '#C077A0', fontWeight: 700 },
+  sliderLabelL: { fontSize: 11, color: 'var(--t-muted)', fontWeight: 700 },
+  sliderLabelR: { fontSize: 11, color: 'var(--t-muted)', fontWeight: 700 },
   sliderVal:    { fontSize: 22, fontWeight: 900, transition: 'color 0.2s' },
 
-  textarea: { width: '100%', minHeight: 52, background: '#FFF5F8', border: '1.5px solid #F4C0D0', borderRadius: 12, padding: '10px 12px', fontSize: 13, color: '#5A3050', fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box' },
+  textarea: { width: '100%', minHeight: 52, background: 'var(--t-surface)', border: '1.5px solid var(--t-border)', borderRadius: 12, padding: '10px 12px', fontSize: 13, color: 'var(--t-subtext)', fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box' },
 
   flagRow:   { marginTop: 12 },
   flagBtn:   { width: '100%', borderRadius: 12, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontFamily: 'inherit' },
@@ -675,41 +675,41 @@ const s = {
   exCard:      { background: '#FFFBE8', border: '1.5px solid #EDE090', borderRadius: 14, padding: '10px 12px' },
   exHeader:    { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   exName:      { fontSize: 13, fontWeight: 800, color: '#8B7A00' },
-  exRemove:    { width: 22, height: 22, borderRadius: 6, background: '#F9D0DF', border: 'none', color: '#C2185B', fontSize: 14, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit' },
+  exRemove:    { width: 22, height: 22, borderRadius: 6, background: 'var(--t-border)', border: 'none', color: 'var(--t-active)', fontSize: 14, fontWeight: 900, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit' },
   exControls:  { display: 'flex', gap: 10 },
   exField:     { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 },
-  exFieldLabel:{ fontSize: 9, fontWeight: 800, color: '#C077A0', textTransform: 'uppercase', letterSpacing: 0.4 },
+  exFieldLabel:{ fontSize: 9, fontWeight: 800, color: 'var(--t-muted)', textTransform: 'uppercase', letterSpacing: 0.4 },
   miniStepper: { display: 'flex', alignItems: 'center', gap: 4 },
-  miniBtn:     { width: 26, height: 26, borderRadius: 7, background: '#F9D0DF', border: '1.5px solid #F4A7B9', fontSize: 15, fontWeight: 900, color: '#C2185B', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit' },
-  miniVal:     { fontSize: 12, fontWeight: 800, color: '#5A3050', minWidth: 28, textAlign: 'center' },
+  miniBtn:     { width: 26, height: 26, borderRadius: 7, background: 'var(--t-border)', border: '1.5px solid var(--t-mid)', fontSize: 15, fontWeight: 900, color: 'var(--t-active)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit' },
+  miniVal:     { fontSize: 12, fontWeight: 800, color: 'var(--t-subtext)', minWidth: 28, textAlign: 'center' },
   weightTap:   { fontSize: 12, fontWeight: 800, color: '#8B7A00', background: '#FFF3A8', border: '1.5px solid #EDE090', borderRadius: 8, padding: '4px 8px', cursor: 'pointer', fontFamily: 'inherit' },
 
   exInputWrap:   { display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 },
-  exInput:       { flex: 1, background: '#FFF5F8', border: '1.5px solid #F4C0D0', borderRadius: 10, padding: '9px 12px', fontSize: 13, color: '#5A3050', fontFamily: 'inherit', outline: 'none' },
-  exAddBtn:      { background: '#F4A7B9', border: 'none', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, color: '#8B1A4A', cursor: 'pointer', fontFamily: 'inherit' },
-  suggestions:   { background: '#fff', border: '1.5px solid #F4C0D0', borderRadius: 12, overflow: 'hidden', marginTop: 4 },
-  suggestionBtn: { width: '100%', padding: '9px 14px', textAlign: 'left', background: 'transparent', border: 'none', borderBottom: '1px solid #F9D0DF', fontSize: 13, color: '#5A3050', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
+  exInput:       { flex: 1, background: 'var(--t-surface)', border: '1.5px solid var(--t-border)', borderRadius: 10, padding: '9px 12px', fontSize: 13, color: 'var(--t-subtext)', fontFamily: 'inherit', outline: 'none' },
+  exAddBtn:      { background: 'var(--t-mid)', border: 'none', borderRadius: 10, padding: '9px 14px', fontSize: 13, fontWeight: 800, color: 'var(--t-dark)', cursor: 'pointer', fontFamily: 'inherit' },
+  suggestions:   { background: '#fff', border: '1.5px solid var(--t-border)', borderRadius: 12, overflow: 'hidden', marginTop: 4 },
+  suggestionBtn: { width: '100%', padding: '9px 14px', textAlign: 'left', background: 'transparent', border: 'none', borderBottom: '1px solid var(--t-border)', fontSize: 13, color: 'var(--t-subtext)', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' },
 
   routeCard:   { background: '#FFE8EE', border: '1.5px solid #FFB8C6', borderRadius: 14, padding: '10px 12px', marginBottom: 8 },
   routeHeader: { display: 'flex', justifyContent: 'space-between', marginBottom: 8 },
   routeNum:    { fontSize: 12, fontWeight: 800, color: '#C4354F' },
   routeRow:    { display: 'flex', gap: 20, alignItems: 'flex-start' },
   routeField:  { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 },
-  gradeSelect: { background: '#FFF5F8', border: '1.5px solid #F4A7B9', borderRadius: 10, padding: '6px 10px', fontSize: 14, fontWeight: 800, color: '#C4354F', outline: 'none', cursor: 'pointer', fontFamily: 'inherit' },
+  gradeSelect: { background: 'var(--t-surface)', border: '1.5px solid var(--t-mid)', borderRadius: 10, padding: '6px 10px', fontSize: 14, fontWeight: 800, color: '#C4354F', outline: 'none', cursor: 'pointer', fontFamily: 'inherit' },
   emptyRoutes: { textAlign: 'center', color: '#D4B0C0', fontSize: 13, fontWeight: 600, padding: '12px 0 6px' },
   addRouteBtn: { width: '100%', marginTop: 4, background: '#FFE8EE', border: '2px dashed #FFB8C6', borderRadius: 12, padding: '10px 0', fontSize: 13, fontWeight: 800, color: '#C4354F', cursor: 'pointer', fontFamily: 'inherit' },
 
-  saveBtn:      { width: '100%', marginTop: 20, background: 'linear-gradient(135deg, #F48FB1, #E91E8C)', border: 'none', borderRadius: 14, color: '#fff', fontSize: 16, fontWeight: 800, padding: '14px 0', cursor: 'pointer', boxShadow: '0 4px 14px rgba(233,30,140,0.3)', fontFamily: 'inherit' },
+  saveBtn:      { width: '100%', marginTop: 20, background: 'linear-gradient(135deg, var(--t-soft), var(--t-accent))', border: 'none', borderRadius: 14, color: '#fff', fontSize: 16, fontWeight: 800, padding: '14px 0', cursor: 'pointer', boxShadow: '0 4px 14px var(--t-phone-shadow)', fontFamily: 'inherit' },
   requiredHint: { textAlign: 'center', fontSize: 11, color: '#C4354F', fontWeight: 700, marginTop: 6 },
-  cancelBtn:    { width: '100%', marginTop: 8, marginBottom: 4, background: 'transparent', border: 'none', color: '#C077A0', fontSize: 13, fontWeight: 700, cursor: 'pointer', padding: '6px 0', fontFamily: 'inherit' },
+  cancelBtn:    { width: '100%', marginTop: 8, marginBottom: 4, background: 'transparent', border: 'none', color: 'var(--t-muted)', fontSize: 13, fontWeight: 700, cursor: 'pointer', padding: '6px 0', fontFamily: 'inherit' },
 
   savedState: { display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 14, paddingTop: 80 },
-  savedTitle: { fontSize: 28, fontWeight: 900, color: '#8B1A4A' },
-  savedSub:   { fontSize: 15, color: '#C077A0', fontWeight: 600 },
+  savedTitle: { fontSize: 28, fontWeight: 900, color: 'var(--t-dark)' },
+  savedSub:   { fontSize: 15, color: 'var(--t-muted)', fontWeight: 600 },
 }
 
 const css = `
   .disc-card:hover { transform: scale(1.04) !important; }
   .save-btn:hover  { filter: brightness(1.05); transform: translateY(-1px); }
-  textarea:focus, input:focus { border-color: #F4A7B9 !important; box-shadow: 0 0 0 3px rgba(244,167,185,0.2); }
+  textarea:focus, input:focus { border-color: var(--t-mid) !important; box-shadow: 0 0 0 3px rgba(244,167,185,0.2); }
 `

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
+import { THEMES, loadTheme, saveTheme, applyTheme } from '../lib/themes'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
@@ -52,7 +53,7 @@ const DISCIPLINES = [
 // ── WORKOUT DETAIL SHEET ─────────────────────────────────────────────────────
 function WorkoutSheet({ workout, onClose, onDeleted, onUpdated }) {
   const dc = DISCIPLINES.find(d => d.id === workout.discipline)
-          ?? { color: '#F4D0DC', dark: '#C077A0', bg: '#FFF0F5', emoji: '🏅', label: workout.discipline }
+          ?? { color: '#F4D0DC', dark: 'var(--t-muted)', bg: 'var(--t-surface)', emoji: '🏅', label: workout.discipline }
 
   const [editing,    setEditing]    = useState(false)
   const [duration,   setDuration]   = useState(workout.duration_minutes ?? 0)
@@ -252,7 +253,7 @@ function WorkoutSheet({ workout, onClose, onDeleted, onUpdated }) {
                   <button style={sh.stepBtn} onClick={() => setEffort(e => Math.max(1, e - 1))}>−</button>
                   <span style={sh.stepVal}>{effort}</span>
                   <button style={sh.stepBtn} onClick={() => setEffort(e => Math.min(10, e + 1))}>+</button>
-                  <span style={{ fontSize: 11, color: '#C077A0' }}>/10</span>
+                  <span style={{ fontSize: 11, color: 'var(--t-muted)' }}>/10</span>
                 </div>
               </div>
 
@@ -260,7 +261,7 @@ function WorkoutSheet({ workout, onClose, onDeleted, onUpdated }) {
                 <div style={sh.editRow}>
                   <span style={sh.editLabel}>Modified</span>
                   <button
-                    style={{ ...sh.footBtn, background: footPain ? '#FFE8EE' : '#FFF5F8', border: `1.5px solid ${footPain ? '#C4354F' : '#F4C0D0'}`, color: footPain ? '#C4354F' : '#B8A0B0' }}
+                    style={{ ...sh.footBtn, background: footPain ? '#FFE8EE' : 'var(--t-surface)', border: `1.5px solid ${footPain ? '#C4354F' : 'var(--t-border)'}`, color: footPain ? '#C4354F' : '#B8A0B0' }}
                     onClick={() => setFootPain(f => !f)}
                   >
                     {footPain ? '⚠️ Foot pain flagged' : 'No foot pain'}
@@ -326,6 +327,13 @@ function SettingsSheet({ profile, onClose, onSignOut, onSave }) {
   const [saving,   setSaving]   = useState(false)
   const [saved,    setSaved]    = useState(false)
   const [faqOpen,  setFaqOpen]  = useState(null)
+  const [activeTheme, setActiveTheme] = useState(loadTheme())
+
+  function handleTheme(name) {
+    saveTheme(name)
+    applyTheme(name)
+    setActiveTheme(name)
+  }
 
   async function handleSave() {
     setSaving(true)
@@ -374,7 +382,7 @@ function SettingsSheet({ profile, onClose, onSignOut, onSave }) {
         <div style={ss.toggleRow}>
           <span style={ss.toggleLabel}>Training for a race?</span>
           <button
-            style={{ ...ss.toggle, background: hasRace ? '#E91E8C' : '#E0D0D8' }}
+            style={{ ...ss.toggle, background: hasRace ? 'var(--t-accent)' : '#E0D0D8' }}
             onClick={() => setHasRace(v => !v)}
           >
             <div style={{ ...ss.toggleThumb, transform: hasRace ? 'translateX(18px)' : 'translateX(0)' }} />
@@ -460,13 +468,35 @@ function SettingsSheet({ profile, onClose, onSignOut, onSave }) {
           {saving ? 'Saving…' : saved ? 'Saved ✓' : 'Save settings'}
         </button>
 
+        {/* Theme */}
+        <div style={{ ...ss.sectionLabel, marginTop: 24 }}>Colour theme</div>
+        <div style={ss.themeRow}>
+          {Object.entries(THEMES).map(([key, t]) => (
+            <button
+              key={key}
+              style={{
+                ...ss.themeBtn,
+                border: activeTheme === key ? `2.5px solid ${t.dark}` : `2px solid ${t.border}`,
+                background: t.bg,
+              }}
+              onClick={() => handleTheme(key)}
+            >
+              <div style={{ width: 28, height: 28, borderRadius: '50%', background: t.accent, marginBottom: 4 }} />
+              <span style={{ fontSize: 10, fontWeight: 800, color: t.dark }}>{t.emoji} {t.name}</span>
+              {activeTheme === key && (
+                <span style={{ fontSize: 9, fontWeight: 700, color: t.active }}>✓ Active</span>
+              )}
+            </button>
+          ))}
+        </div>
+
         {/* FAQ */}
         <div style={{ ...ss.sectionLabel, marginTop: 24 }}>FAQ</div>
         {FAQ_ITEMS.map((item, i) => (
           <div key={i}>
             <button style={ss.faqQ} onClick={() => setFaqOpen(faqOpen === i ? null : i)}>
               <span style={{ flex: 1, textAlign: 'left' }}>{item.q}</span>
-              <span style={{ fontSize: 18, color: '#C077A0', flexShrink: 0 }}>{faqOpen === i ? '−' : '+'}</span>
+              <span style={{ fontSize: 18, color: 'var(--t-muted)', flexShrink: 0 }}>{faqOpen === i ? '−' : '+'}</span>
             </button>
             {faqOpen === i && <div style={ss.faqA}>{item.a}</div>}
           </div>
@@ -484,68 +514,70 @@ function SettingsSheet({ profile, onClose, onSignOut, onSave }) {
 // ── SHEET STYLES ─────────────────────────────────────────────────────────────
 const sh = {
   backdrop:    { position: 'absolute', inset: 0, background: 'rgba(139,26,74,0.3)', backdropFilter: 'blur(2px)', zIndex: 50 },
-  sheet:       { position: 'absolute', bottom: 0, left: 0, right: 0, background: '#FFF8FB', borderRadius: '22px 22px 0 0', padding: '12px 20px 36px', zIndex: 51, boxShadow: '0 -6px 32px rgba(194,24,91,0.15)', maxHeight: '85%', overflowY: 'auto' },
-  handle:      { width: 40, height: 5, background: '#F4C0D0', borderRadius: 3, margin: '0 auto 16px' },
+  sheet:       { position: 'absolute', bottom: 0, left: 0, right: 0, background: 'var(--t-bg)', borderRadius: '22px 22px 0 0', padding: '12px 20px 36px', zIndex: 51, boxShadow: '0 -6px 32px var(--t-phone-shadow)', maxHeight: '85%', overflowY: 'auto' },
+  handle:      { width: 40, height: 5, background: 'var(--t-border)', borderRadius: 3, margin: '0 auto 16px' },
   header:      { display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 },
   badge:       { width: 44, height: 44, borderRadius: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 },
   sheetTitle:  { fontSize: 18, fontWeight: 900 },
-  sheetDate:   { fontSize: 11, color: '#C077A0', fontWeight: 600, marginTop: 1 },
-  closeBtn:    { width: 28, height: 28, borderRadius: 8, background: '#F9D0DF', border: 'none', fontSize: 18, color: '#C2185B', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', flexShrink: 0 },
+  sheetDate:   { fontSize: 11, color: 'var(--t-muted)', fontWeight: 600, marginTop: 1 },
+  closeBtn:    { width: 28, height: 28, borderRadius: 8, background: 'var(--t-border)', border: 'none', fontSize: 18, color: 'var(--t-active)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', flexShrink: 0 },
 
   rows:        { display: 'flex', flexDirection: 'column', marginBottom: 12 },
-  row:         { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '9px 0', borderBottom: '1px solid #F9D0DF' },
-  rowLabel:    { fontSize: 12, fontWeight: 700, color: '#C077A0', flexShrink: 0 },
-  rowVal:      { fontSize: 13, fontWeight: 700, color: '#3A2040', textAlign: 'right', marginLeft: 16 },
+  row:         { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', padding: '9px 0', borderBottom: '1px solid var(--t-border)' },
+  rowLabel:    { fontSize: 12, fontWeight: 700, color: 'var(--t-muted)', flexShrink: 0 },
+  rowVal:      { fontSize: 13, fontWeight: 700, color: 'var(--t-text)', textAlign: 'right', marginLeft: 16 },
 
   subSection:  { marginBottom: 14 },
-  subLabel:    { fontSize: 10, fontWeight: 800, color: '#C077A0', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 4 },
-  subRow:      { display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid #F9D0DF' },
-  subName:     { fontSize: 12, fontWeight: 700, color: '#3A2040' },
-  subDetail:   { fontSize: 12, color: '#C077A0', fontWeight: 600 },
+  subLabel:    { fontSize: 10, fontWeight: 800, color: 'var(--t-muted)', textTransform: 'uppercase', letterSpacing: 0.4, marginBottom: 4 },
+  subRow:      { display: 'flex', justifyContent: 'space-between', padding: '6px 0', borderBottom: '1px solid var(--t-border)' },
+  subName:     { fontSize: 12, fontWeight: 700, color: 'var(--t-text)' },
+  subDetail:   { fontSize: 12, color: 'var(--t-muted)', fontWeight: 600 },
 
   actions:     { display: 'flex', gap: 10, marginTop: 20 },
-  editBtn:     { flex: 1, background: '#FFF0F5', border: '1.5px solid #F4C0D0', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, color: '#C2185B', cursor: 'pointer', fontFamily: 'inherit' },
+  editBtn:     { flex: 1, background: 'var(--t-surface)', border: '1.5px solid var(--t-border)', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, color: 'var(--t-active)', cursor: 'pointer', fontFamily: 'inherit' },
   deleteBtn:   { flex: 1, border: 'none', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.2s' },
 
   editFields:  { display: 'flex', flexDirection: 'column' },
-  editRow:     { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F9D0DF' },
-  editLabel:   { fontSize: 12, fontWeight: 700, color: '#C077A0' },
+  editRow:     { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--t-border)' },
+  editLabel:   { fontSize: 12, fontWeight: 700, color: 'var(--t-muted)' },
   editInputWrap: { display: 'flex', alignItems: 'center', gap: 6 },
-  editInput:   { width: 72, background: '#FFF0F5', border: '1.5px solid #F4C0D0', borderRadius: 10, padding: '6px 10px', fontSize: 16, fontWeight: 800, color: '#8B1A4A', textAlign: 'center', outline: 'none', fontFamily: 'inherit' },
-  editUnit:    { fontSize: 12, color: '#C077A0', fontWeight: 700 },
-  editTextarea:{ width: '100%', minHeight: 70, background: '#FFF5F8', border: '1.5px solid #F4C0D0', borderRadius: 12, padding: '10px 12px', fontSize: 13, color: '#5A3050', fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box', marginTop: 8 },
-  stepBtn:     { width: 28, height: 28, borderRadius: 8, background: '#F9D0DF', border: '1.5px solid #F4A7B9', fontSize: 17, fontWeight: 900, color: '#C2185B', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit' },
-  stepVal:     { fontSize: 18, fontWeight: 900, color: '#8B1A4A', minWidth: 28, textAlign: 'center' },
+  editInput:   { width: 72, background: 'var(--t-surface)', border: '1.5px solid var(--t-border)', borderRadius: 10, padding: '6px 10px', fontSize: 16, fontWeight: 800, color: 'var(--t-dark)', textAlign: 'center', outline: 'none', fontFamily: 'inherit' },
+  editUnit:    { fontSize: 12, color: 'var(--t-muted)', fontWeight: 700 },
+  editTextarea:{ width: '100%', minHeight: 70, background: 'var(--t-surface)', border: '1.5px solid var(--t-border)', borderRadius: 12, padding: '10px 12px', fontSize: 13, color: 'var(--t-subtext)', fontFamily: 'inherit', resize: 'vertical', outline: 'none', boxSizing: 'border-box', marginTop: 8 },
+  stepBtn:     { width: 28, height: 28, borderRadius: 8, background: 'var(--t-border)', border: '1.5px solid var(--t-mid)', fontSize: 17, fontWeight: 900, color: 'var(--t-active)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit' },
+  stepVal:     { fontSize: 18, fontWeight: 900, color: 'var(--t-dark)', minWidth: 28, textAlign: 'center' },
   footBtn:     { borderRadius: 10, padding: '8px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' },
-  cancelBtn:   { flex: 1, background: 'transparent', border: '1.5px solid #F4C0D0', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, color: '#C077A0', cursor: 'pointer', fontFamily: 'inherit' },
-  saveBtn:     { flex: 1.5, background: 'linear-gradient(135deg, #F48FB1, #E91E8C)', border: 'none', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 12px rgba(233,30,140,0.3)' },
+  cancelBtn:   { flex: 1, background: 'transparent', border: '1.5px solid var(--t-border)', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, color: 'var(--t-muted)', cursor: 'pointer', fontFamily: 'inherit' },
+  saveBtn:     { flex: 1.5, background: 'linear-gradient(135deg, var(--t-soft), var(--t-accent))', border: 'none', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 12px var(--t-phone-shadow)' },
 }
 
 // ── SETTINGS SHEET STYLES ────────────────────────────────────────────────────
 const ss = {
   sheet:        { ...sh.sheet, maxHeight: '92%' },
   header:       { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  title:        { fontSize: 20, fontWeight: 900, color: '#8B1A4A' },
-  sectionLabel: { fontSize: 10, fontWeight: 800, color: '#C077A0', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8, marginTop: 4 },
-  namePill:     { background: '#FFF0F5', borderRadius: 12, padding: '12px 14px', fontSize: 15, fontWeight: 700, color: '#3A2040', marginBottom: 16 },
-  toggleRow:    { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #F9D0DF' },
-  toggleLabel:  { fontSize: 13, fontWeight: 700, color: '#3A2040' },
+  title:        { fontSize: 20, fontWeight: 900, color: 'var(--t-dark)' },
+  sectionLabel: { fontSize: 10, fontWeight: 800, color: 'var(--t-muted)', textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8, marginTop: 4 },
+  namePill:     { background: 'var(--t-surface)', borderRadius: 12, padding: '12px 14px', fontSize: 15, fontWeight: 700, color: 'var(--t-text)', marginBottom: 16 },
+  toggleRow:    { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--t-border)' },
+  toggleLabel:  { fontSize: 13, fontWeight: 700, color: 'var(--t-text)' },
   toggle:       { width: 42, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', padding: 3, transition: 'background 0.2s', display: 'flex', alignItems: 'center', flexShrink: 0 },
   toggleThumb:  { width: 18, height: 18, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 4px rgba(0,0,0,0.2)', transition: 'transform 0.2s' },
   fieldGroup:   { marginTop: 12 },
-  fieldLabel:   { fontSize: 11, fontWeight: 700, color: '#C077A0', marginBottom: 5 },
-  input:        { width: '100%', background: '#FFF5F8', border: '1.5px solid #F4C0D0', borderRadius: 10, padding: '9px 12px', fontSize: 13, color: '#3A2040', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' },
+  fieldLabel:   { fontSize: 11, fontWeight: 700, color: 'var(--t-muted)', marginBottom: 5 },
+  input:        { width: '100%', background: 'var(--t-surface)', border: '1.5px solid var(--t-border)', borderRadius: 10, padding: '9px 12px', fontSize: 13, color: 'var(--t-text)', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' },
   raceTypeRow:  { display: 'flex', gap: 6 },
-  raceTypeBtn:  { flex: 1, padding: '8px 4px', borderRadius: 10, border: '1.5px solid #F4C0D0', background: '#FFF5F8', fontSize: 12, fontWeight: 700, color: '#C077A0', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' },
-  raceTypeBtnActive: { background: 'linear-gradient(135deg, #F48FB1, #E91E8C)', border: '1.5px solid #E91E8C', color: '#fff' },
+  raceTypeBtn:  { flex: 1, padding: '8px 4px', borderRadius: 10, border: '1.5px solid var(--t-border)', background: 'var(--t-surface)', fontSize: 12, fontWeight: 700, color: 'var(--t-muted)', cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s' },
+  raceTypeBtnActive: { background: 'linear-gradient(135deg, var(--t-soft), var(--t-accent))', border: '1.5px solid var(--t-accent)', color: '#fff' },
   distRow:      { display: 'flex', gap: 8 },
   distField:    { flex: 1, display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'center' },
-  distInput:    { width: '100%', background: '#FFF5F8', border: '1.5px solid #F4C0D0', borderRadius: 10, padding: '9px 8px', fontSize: 15, fontWeight: 700, color: '#8B1A4A', textAlign: 'center', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' },
-  distUnit:     { fontSize: 10, fontWeight: 700, color: '#C077A0' },
-  saveBtn:      { width: '100%', background: 'linear-gradient(135deg, #F48FB1, #E91E8C)', border: 'none', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 12px rgba(233,30,140,0.3)', marginTop: 16 },
-  faqQ:         { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', background: 'none', border: 'none', borderBottom: '1px solid #F9D0DF', padding: '11px 0', fontSize: 13, fontWeight: 700, color: '#3A2040', cursor: 'pointer', fontFamily: 'inherit', gap: 8 },
-  faqA:         { fontSize: 12, color: '#5A3050', lineHeight: 1.6, padding: '8px 0 10px', borderBottom: '1px solid #F9D0DF' },
-  signOutBtn:   { width: '100%', background: '#FFF0F5', border: '1.5px solid #F4C0D0', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, color: '#C4354F', cursor: 'pointer', fontFamily: 'inherit', marginTop: 20 },
+  distInput:    { width: '100%', background: 'var(--t-surface)', border: '1.5px solid var(--t-border)', borderRadius: 10, padding: '9px 8px', fontSize: 15, fontWeight: 700, color: 'var(--t-dark)', textAlign: 'center', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' },
+  distUnit:     { fontSize: 10, fontWeight: 700, color: 'var(--t-muted)' },
+  saveBtn:      { width: '100%', background: 'linear-gradient(135deg, var(--t-soft), var(--t-accent))', border: 'none', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 12px var(--t-phone-shadow)', marginTop: 16 },
+  faqQ:         { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', background: 'none', border: 'none', borderBottom: '1px solid var(--t-border)', padding: '11px 0', fontSize: 13, fontWeight: 700, color: 'var(--t-text)', cursor: 'pointer', fontFamily: 'inherit', gap: 8 },
+  faqA:         { fontSize: 12, color: 'var(--t-subtext)', lineHeight: 1.6, padding: '8px 0 10px', borderBottom: '1px solid var(--t-border)' },
+  signOutBtn:   { width: '100%', background: 'var(--t-surface)', border: '1.5px solid var(--t-border)', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, color: '#C4354F', cursor: 'pointer', fontFamily: 'inherit', marginTop: 20 },
+  themeRow:     { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 },
+  themeBtn:     { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '10px 4px', borderRadius: 14, cursor: 'pointer', fontFamily: 'inherit', background: 'none' },
 }
 
 // ── HOME SCREEN ───────────────────────────────────────────────────────────────
@@ -737,7 +769,7 @@ export default function Home() {
           <div style={s.headerSub}>{greeting.sub}</div>
         </div>
         <button style={s.settingsBtn} onClick={() => setShowSettings(true)} aria-label="Settings">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#C077A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--t-muted)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="12" cy="12" r="3"/>
             <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
           </svg>
@@ -805,7 +837,7 @@ export default function Home() {
             <div style={s.goalsGrid}>
               {goalsLoading && !weeklyGoals ? (
                 ['🏊', '🚴', '🏃'].map(e => (
-                  <div key={e} style={{ ...s.goalCard, background: '#FFF0F5' }}>
+                  <div key={e} style={{ ...s.goalCard, background: 'var(--t-surface)' }}>
                     <div style={s.weekEmoji}>{e}</div>
                     <div style={{ fontSize: 9, color: '#D4B0C0', fontWeight: 700, marginTop: 4 }}>Planning…</div>
                   </div>
@@ -918,7 +950,7 @@ const s = {
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
-    background: '#FFF8FB',
+    background: 'var(--t-bg)',
     fontFamily: "'Nunito', system-ui, sans-serif",
     position: 'relative',
   },
@@ -927,11 +959,11 @@ const s = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '14px 20px 12px',
-    borderBottom: '1.5px solid #F9D0DF',
+    borderBottom: '1.5px solid var(--t-border)',
     flexShrink: 0,
   },
-  headerGreeting: { fontSize: 20, fontWeight: 800, color: '#8B1A4A', letterSpacing: -0.3 },
-  headerSub:      { fontSize: 13, color: '#C077A0', marginTop: 2 },
+  headerGreeting: { fontSize: 20, fontWeight: 800, color: 'var(--t-dark)', letterSpacing: -0.3 },
+  headerSub:      { fontSize: 13, color: 'var(--t-muted)', marginTop: 2 },
   settingsBtn:    { background: 'none', border: 'none', cursor: 'pointer', padding: 6, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
 
   scroll: {
@@ -943,11 +975,11 @@ const s = {
 
   // RACE CARD
   raceCard: {
-    background: 'linear-gradient(135deg, #FF8FAB 0%, #F06292 40%, #E91E8C 100%)',
+    background: 'linear-gradient(135deg, var(--t-soft) 0%, var(--t-active) 40%, var(--t-accent) 100%)',
     borderRadius: 20,
     padding: '20px 20px 16px',
     marginBottom: 14,
-    boxShadow: '0 6px 20px rgba(240,98,146,0.35)',
+    boxShadow: '0 6px 20px var(--t-phone-shadow)',
     display: 'flex',
     alignItems: 'center',
     gap: 8,
@@ -962,7 +994,7 @@ const s = {
   // LOG BUTTON
   logBtn: {
     width: '100%',
-    background: 'linear-gradient(135deg, #F48FB1, #F06292)',
+    background: 'linear-gradient(135deg, var(--t-soft), var(--t-active))',
     border: 'none',
     borderRadius: 16,
     padding: '16px 24px',
@@ -972,7 +1004,7 @@ const s = {
     gap: 10,
     cursor: 'pointer',
     marginBottom: 20,
-    boxShadow: '0 4px 16px rgba(240,98,146,0.3), 0 2px 4px rgba(0,0,0,0.08)',
+    boxShadow: '0 4px 16px var(--t-phone-shadow), 0 2px 4px rgba(0,0,0,0.08)',
     fontFamily: 'inherit',
   },
   logBtnPlus: { fontSize: 24, color: '#fff', fontWeight: 900, lineHeight: 1 },
@@ -982,11 +1014,11 @@ const s = {
   sectionHeader: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 10,
   },
-  sectionTitle: { fontSize: 15, fontWeight: 800, color: '#8B1A4A' },
-  seeAllBtn:    { background: 'none', border: 'none', fontSize: 11, color: '#C077A0', fontWeight: 700, cursor: 'pointer', padding: 0 },
+  sectionTitle: { fontSize: 15, fontWeight: 800, color: 'var(--t-dark)' },
+  seeAllBtn:    { background: 'none', border: 'none', fontSize: 11, color: 'var(--t-muted)', fontWeight: 700, cursor: 'pointer', padding: 0 },
 
   // AI WEEKLY GOALS
-  aiPill:          { fontSize: 10, fontWeight: 800, color: '#E91E8C', background: '#FFE0F0', borderRadius: 8, padding: '3px 8px' },
+  aiPill:          { fontSize: 10, fontWeight: 800, color: 'var(--t-accent)', background: 'var(--t-surface)', borderRadius: 8, padding: '3px 8px' },
   goalsGrid:       { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 22 },
   goalCard: {
     borderRadius: 14, padding: '12px 8px 10px',
@@ -994,7 +1026,7 @@ const s = {
     boxShadow: '0 2px 8px rgba(0,0,0,0.06)', cursor: 'pointer',
   },
   weekEmoji:       { fontSize: 18 },
-  weekLabel:       { fontSize: 9, fontWeight: 700, color: '#8B4A6E', textTransform: 'uppercase', letterSpacing: 0.3 },
+  weekLabel:       { fontSize: 9, fontWeight: 700, color: 'var(--t-muted)', textTransform: 'uppercase', letterSpacing: 0.3 },
   weekBar:         { width: '80%', height: 5, background: 'rgba(0,0,0,0.08)', borderRadius: 3, overflow: 'hidden' },
   weekBarFill:     { height: '100%', borderRadius: 3, transition: 'width 0.6s ease' },
   weekCount:       { fontSize: 11, fontWeight: 800 },
@@ -1015,17 +1047,17 @@ const s = {
   recentInfo:   { flex: 1, minWidth: 0 },
   recentLabel:  { fontSize: 13, fontWeight: 800 },
   recentDetail: { fontSize: 11, color: '#B8A0B0', marginTop: 1 },
-  recentTime:   { fontSize: 10, color: '#C077A0', fontWeight: 600, flexShrink: 0 },
+  recentTime:   { fontSize: 10, color: 'var(--t-muted)', fontWeight: 600, flexShrink: 0 },
   emptyState:   { textAlign: 'center', color: '#D4B0C0', fontSize: 13, fontWeight: 600, padding: '20px 0' },
   errorState:   { textAlign: 'center', color: '#C4354F', fontSize: 12, fontWeight: 600, padding: '20px 0', lineHeight: 1.5 },
-  loadMoreBtn:  { width: '100%', padding: '10px 0', background: 'transparent', border: '1.5px solid #F4C0D0', borderRadius: 12, fontSize: 12, fontWeight: 700, color: '#C077A0', cursor: 'pointer', fontFamily: 'inherit', marginTop: 4 },
+  loadMoreBtn:  { width: '100%', padding: '10px 0', background: 'transparent', border: '1.5px solid var(--t-border)', borderRadius: 12, fontSize: 12, fontWeight: 700, color: 'var(--t-muted)', cursor: 'pointer', fontFamily: 'inherit', marginTop: 4 },
 }
 
 const css = `
   .race-card { transition: transform 0.2s ease; }
   .race-card:hover { transform: scale(1.01); }
   .log-btn { transition: transform 0.15s ease, box-shadow 0.15s ease; }
-  .log-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(240,98,146,0.4) !important; }
+  .log-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px var(--t-phone-shadow) !important; }
   .log-btn:active { transform: translateY(0); }
   .week-card { transition: transform 0.15s ease; }
   .week-card:hover { transform: scale(1.04); }

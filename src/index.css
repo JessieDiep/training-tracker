@@ -13,7 +13,7 @@ html, body, #root {
 
 body {
   font-family: 'Nunito', system-ui, sans-serif;
-  background: linear-gradient(135deg, #FFE8F0 0%, #F8E8FF 50%, #E8F4FF 100%);
+  background: linear-gradient(135deg, var(--t-shell-start, #FFE8F0) 0%, var(--t-shell-mid, #F8E8FF) 50%, var(--t-shell-end, #E8F4FF) 100%);
   overscroll-behavior: none;
 }
 
@@ -33,13 +33,13 @@ body {
 .pwa-phone {
   width: 375px;
   height: 780px;
-  background: #FFF8FB;
+  background: var(--t-bg, #FFF8FB);
   border-radius: 44px;
   box-shadow:
-    0 32px 80px rgba(194, 24, 91, 0.18),
+    0 32px 80px var(--t-phone-shadow, rgba(194,24,91,0.18)),
     0 8px 24px rgba(0, 0, 0, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  border: 2px solid rgba(244, 167, 185, 0.4);
+  border: 2px solid var(--t-border, rgba(244,167,185,0.4));
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -55,7 +55,7 @@ body {
   }
   .pwa-shell {
     padding: 0;
-    background: #FFF8FB;
+    background: var(--t-bg, #FFF8FB);
   }
   /* position:fixed + inset:0 pins to the true screen edges */
   .pwa-phone {

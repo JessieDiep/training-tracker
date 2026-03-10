@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+﻿import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 import { getThisWeekWorkouts } from '../lib/workouts'
@@ -155,11 +155,13 @@ export default function Plan() {
                   <div style={s.discHeader}>
                     <span style={s.discEmoji}>{d.emoji}</span>
                     <span style={s.discTitle}>{d.label}</span>
-                    <span style={{
-                      ...s.discBadge,
-                      background: allDone ? '#E8FAF3' : d.color,
-                      color:      allDone ? '#2D8B6F' : d.dark,
-                    }}>
+                    <span
+                      className={allDone ? 'badge-pop' : ''}
+                      style={{
+                        ...s.discBadge,
+                        background: allDone ? '#E8FAF3' : d.color,
+                        color:      allDone ? '#2D8B6F' : d.dark,
+                      }}>
                       {done}/{sessions.length} done
                     </span>
                   </div>
@@ -225,9 +227,9 @@ export default function Plan() {
 }
 
 const s = {
-  screen:    { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#FFF8FB', fontFamily: "'Nunito', system-ui, sans-serif" },
-  pageHeader:{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px 10px', borderBottom: '1.5px solid #F9D0DF', flexShrink: 0 },
-  pageTitle: { fontSize: 17, fontWeight: 900, color: '#8B1A4A' },
+  screen:    { flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', background: 'var(--t-bg)', fontFamily: "'Nunito', system-ui, sans-serif" },
+  pageHeader:{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px 10px', borderBottom: '1.5px solid var(--t-border)', flexShrink: 0 },
+  pageTitle: { fontSize: 17, fontWeight: 900, color: 'var(--t-dark)' },
   regenRow:  { textAlign: 'center', marginTop: 16, paddingBottom: 8 },
   regenLink: { background: 'none', border: 'none', fontSize: 11, fontWeight: 700, color: '#C0A0B8', cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'underline' },
   scroll:    { flex: 1, overflowY: 'auto', padding: '14px 16px', scrollbarWidth: 'none' },
@@ -235,24 +237,24 @@ const s = {
   discBlock:  { borderRadius: 14, padding: '12px 14px', marginBottom: 12 },
   discHeader: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 },
   discEmoji:  { fontSize: 20 },
-  discTitle:  { fontSize: 15, fontWeight: 900, color: '#3A2040', flex: 1 },
+  discTitle:  { fontSize: 15, fontWeight: 900, color: 'var(--t-text)', flex: 1 },
   discBadge:  { fontSize: 10, fontWeight: 800, borderRadius: 8, padding: '3px 9px' },
 
   sessionCard:{ background: 'rgba(255,255,255,0.7)', borderRadius: 10, padding: '9px 10px', marginBottom: 7 },
   sessionTop: { display: 'flex', alignItems: 'center', gap: 7, marginBottom: 5, flexWrap: 'wrap' },
   typePill:   { fontSize: 11, fontWeight: 800, borderRadius: 7, padding: '3px 9px' },
-  sessionMeta:{ fontSize: 11, fontWeight: 700, color: '#8B4A6E', flex: 1 },
+  sessionMeta:{ fontSize: 11, fontWeight: 700, color: 'var(--t-muted)', flex: 1 },
   check:      { fontSize: 14, color: '#2D8B6F', fontWeight: 900 },
-  structure:  { fontSize: 12, color: '#5A3050', lineHeight: 1.5, fontWeight: 600 },
+  structure:  { fontSize: 12, color: 'var(--t-subtext)', lineHeight: 1.5, fontWeight: 600 },
 
-  rationaleBox:  { background: '#FFF0F6', borderRadius: 12, padding: '10px 14px', marginTop: 4 },
-  rationaleLabel:{ fontSize: 11, fontWeight: 800, color: '#C2185B' },
-  rationaleText: { fontSize: 12, color: '#5A3050', fontStyle: 'italic', fontWeight: 600 },
+  rationaleBox:  { background: 'var(--t-surface)', borderRadius: 12, padding: '10px 14px', marginTop: 4 },
+  rationaleLabel:{ fontSize: 11, fontWeight: 800, color: 'var(--t-active)' },
+  rationaleText: { fontSize: 12, color: 'var(--t-subtext)', fontStyle: 'italic', fontWeight: 600 },
 
   empty: { textAlign: 'center', color: '#C0A0B8', fontSize: 13, fontWeight: 600, padding: '32px 0' },
 
-  infoBanner:   { background: '#FFF0F6', borderRadius: 12, padding: '10px 14px', fontSize: 12, color: '#8B4A6E', fontWeight: 600, lineHeight: 1.5, marginTop: 12 },
-  acceptBtn:    { width: '100%', background: 'linear-gradient(135deg, #F48FB1, #E91E8C)', border: 'none', borderRadius: 14, padding: '14px 0', fontSize: 16, fontWeight: 800, color: '#fff', cursor: 'pointer', fontFamily: "'Nunito', system-ui, sans-serif", boxShadow: '0 4px 16px rgba(233,30,140,0.25)', marginTop: 16 },
+  infoBanner:   { background: 'var(--t-surface)', borderRadius: 12, padding: '10px 14px', fontSize: 12, color: 'var(--t-muted)', fontWeight: 600, lineHeight: 1.5, marginTop: 12 },
+  acceptBtn:    { width: '100%', background: 'linear-gradient(135deg, var(--t-soft), var(--t-accent))', border: 'none', borderRadius: 14, padding: '14px 0', fontSize: 16, fontWeight: 800, color: '#fff', cursor: 'pointer', fontFamily: "'Nunito', system-ui, sans-serif", boxShadow: '0 4px 16px var(--t-phone-shadow)', marginTop: 16 },
   lockedBanner: { background: '#E8FAF3', borderRadius: 12, padding: '12px 14px', marginTop: 12, textAlign: 'center' },
   lockedTitle:  { fontSize: 13, fontWeight: 800, color: '#2D8B6F' },
   lockedSub:    { fontSize: 11, fontWeight: 600, color: '#5A8A78', marginTop: 3 },
@@ -261,7 +263,7 @@ const s = {
 }
 
 // ── CONFETTI ──────────────────────────────────────────────────────────────────
-const COLORS = ['#F48FB1', '#E91E8C', '#C9B8F0', '#A8E6CF', '#FFD4A8', '#FF8FAB', '#fff']
+const COLORS = ['var(--t-soft)', 'var(--t-accent)', '#C9B8F0', '#A8E6CF', '#FFD4A8', 'var(--t-soft)', '#fff']
 const CONFETTI_PIECES = Array.from({ length: 48 }, (_, i) => ({
   x:     Math.random() * 100,
   size:  6 + Math.random() * 7,
@@ -281,5 +283,14 @@ const confettiCss = `
   position: absolute;
   top: 0;
   animation: confetti-fall linear forwards;
+}
+@keyframes badge-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.35); }
+  70%  { transform: scale(0.9); }
+  100% { transform: scale(1); }
+}
+.badge-pop {
+  animation: badge-pop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 `
