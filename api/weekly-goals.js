@@ -142,7 +142,6 @@ ${workoutHistory}
 - "duration" is total session time in minutes including warm-up and cool-down
 - "effort" is RPE 1-10 scale for the main set
 - "rationale" explains this week's training focus in 1-2 sentences
-- For non-race users: use general fitness goals with moderate sustainable volume
 - Output ONLY the JSON object, nothing else`
 }
 

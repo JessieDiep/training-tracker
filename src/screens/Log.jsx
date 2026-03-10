@@ -14,10 +14,10 @@ const DISCIPLINES = [
   { id: 'recover', label: 'Recover', color: '#B8F0E0', dark: '#1A7A5E', bg: '#E8FAF3', emoji: '🌿' },
 ]
 
-const SWIM_FOCUS    = ['Technique', 'Endurance', 'Intervals', 'Race Pace', 'Drills']
+const SWIM_FOCUS    = ['Technique', 'Endurance', 'Threshold', 'Intervals', 'Race Pace']
 const SWIM_PRESETS  = [100, 300, 500]
-const BIKE_TYPES    = ['Endurance', 'Intervals', 'Hills', 'Recovery']
-const RUN_TYPES     = ['Recovery', 'Endurance', 'Tempo', 'Intervals']
+const BIKE_TYPES    = ['Endurance', 'Tempo', 'Threshold', 'Intervals', 'Recovery Spin']
+const RUN_TYPES     = ['Recovery', 'Tempo', 'Intervals', 'Long Run', 'Brick Run']
 const RUN_PRESETS   = [1, 2, 3, 4, 5]
 const RUN_SURFACES  = ['Road', 'Treadmill', 'Trail', 'Soft Surface']
 const STRENGTH_FOCUS = ['Glutes', 'Legs', 'Core', 'Upper Body', 'Full Body', 'Mobility']
