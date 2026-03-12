@@ -74,10 +74,10 @@ export const THEMES = {
 }
 
 export const STORAGE_KEY = 'tt-theme'
-export const DEFAULT_THEME = 'rose'
+export const DEFAULT_THEME = 'ocean'
 
 export function applyTheme(name) {
-  const t = THEMES[name] ?? THEMES.rose
+  const t = THEMES[name] ?? THEMES.ocean
   const r = document.documentElement
   r.style.setProperty('--t-bg',           t.bg)
   r.style.setProperty('--t-dark',         t.dark)
