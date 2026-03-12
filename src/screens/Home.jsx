@@ -502,6 +502,16 @@ function SettingsSheet({ profile, onClose, onSignOut, onSave }) {
           </div>
         ))}
 
+        {/* Ko-fi support link */}
+        <a
+          href="https://ko-fi.com/jessiediep"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={ss.kofiBtn}
+        >
+          ☕ Support this app on Ko-fi
+        </a>
+
         {/* Sign out */}
         <button style={ss.signOutBtn} onClick={onSignOut}>Sign out</button>
 
@@ -575,7 +585,8 @@ const ss = {
   saveBtn:      { width: '100%', background: 'linear-gradient(135deg, var(--t-soft), var(--t-accent))', border: 'none', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 3px 12px var(--t-phone-shadow)', marginTop: 16 },
   faqQ:         { display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', background: 'none', border: 'none', borderBottom: '1px solid var(--t-border)', padding: '11px 0', fontSize: 13, fontWeight: 700, color: 'var(--t-text)', cursor: 'pointer', fontFamily: 'inherit', gap: 8 },
   faqA:         { fontSize: 12, color: 'var(--t-subtext)', lineHeight: 1.6, padding: '8px 0 10px', borderBottom: '1px solid var(--t-border)' },
-  signOutBtn:   { width: '100%', background: 'var(--t-surface)', border: '1.5px solid var(--t-border)', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, color: '#C4354F', cursor: 'pointer', fontFamily: 'inherit', marginTop: 20 },
+  kofiBtn:      { display: 'block', textAlign: 'center', marginTop: 20, padding: '11px 0', borderRadius: 13, background: 'var(--t-surface)', border: '1.5px solid var(--t-border)', fontSize: 13, fontWeight: 700, color: 'var(--t-muted)', textDecoration: 'none' },
+  signOutBtn:   { width: '100%', background: 'var(--t-surface)', border: '1.5px solid var(--t-border)', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, color: '#C4354F', cursor: 'pointer', fontFamily: 'inherit', marginTop: 12 },
   themeRow:     { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 },
   themeBtn:     { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '10px 4px', borderRadius: 14, cursor: 'pointer', fontFamily: 'inherit', background: 'none' },
 }
