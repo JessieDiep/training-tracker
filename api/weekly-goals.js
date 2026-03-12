@@ -23,20 +23,124 @@ function toISODate(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-function formatWorkoutLine(w) {
+function fmtPace(minPerKm) {
+  if (!minPerKm || !isFinite(minPerKm)) return null
+  const m = Math.floor(minPerKm), s = Math.round((minPerKm - m) * 60)
+  return `${m}:${String(s).padStart(2, '0')}/km`
+}
+function fmtSwimPace(minPerM) {
+  const p = fmtPace(minPerM * 100)
+  return p ? p.replace('/km', '/100m') : null
+}
+function fmtKmH(km, min) {
+  if (!km || !min) return null
+  return `${(km / min * 60).toFixed(1)}km/h`
+}
+function epley(weight, reps) { return Math.round(weight * (1 + reps / 30)) }
+
+function formatWorkoutLine(w, detailed = false) {
   const d = w.details ?? {}
-  let detail = ''
-  switch (w.discipline) {
-    case 'swim':     detail = [d.distance && `${d.distance}m`, d.focus].filter(Boolean).join(' '); break
-    case 'bike':     detail = `${w.duration_minutes ?? '?'}min`; break
-    case 'run':      detail = [`${d.distance ?? '?'}km`, d.footPain ? 'FOOT PAIN' : null].filter(Boolean).join(' '); break
-    case 'strength': detail = (d.focus ?? []).join('+'); break
-    case 'climb':    detail = `${(d.routes ?? []).length} routes`; break
-    case 'recover':  detail = (d.types ?? []).join('+'); break
-  }
   const effortStr = w.effort ? ` effort:${w.effort}/10` : ''
   const noteStr   = w.notes  ? ` [${w.notes}]` : ''
-  return `${w.discipline}(${detail.trim()}${effortStr})${noteStr}`
+
+  if (!detailed) {
+    let detail = ''
+    switch (w.discipline) {
+      case 'swim':     detail = [d.distance && `${d.distance}m`, d.focus].filter(Boolean).join(' '); break
+      case 'bike':     detail = `${w.duration_minutes ?? '?'}min`; break
+      case 'run':      detail = [`${d.distance ?? '?'}km`, d.footPain ? 'FOOT PAIN' : null].filter(Boolean).join(' '); break
+      case 'strength': detail = (d.focus ?? []).join('+'); break
+      case 'climb':    detail = `${(d.routes ?? []).length} routes`; break
+      case 'recover':  detail = (d.types ?? []).join('+'); break
+    }
+    return `${w.discipline}(${detail.trim()}${effortStr})${noteStr}`
+  }
+
+  switch (w.discipline) {
+    case 'run': {
+      const km   = d.distance
+      const pace = km && w.duration_minutes ? fmtPace(w.duration_minutes / km) : null
+      const parts = [km && `${km}km`, pace, d.type, d.footPain ? 'FOOT PAIN' : null].filter(Boolean)
+      return `run(${parts.join(' · ')}${effortStr})${noteStr}`
+    }
+    case 'swim': {
+      const m    = d.distance
+      const pace = m && w.duration_minutes ? fmtSwimPace(w.duration_minutes / m) : null
+      const parts = [m && `${m}m`, pace, d.focus].filter(Boolean)
+      return `swim(${parts.join(' · ')}${effortStr})${noteStr}`
+    }
+    case 'bike': {
+      const km    = d.distance
+      const speed = km && w.duration_minutes ? fmtKmH(km, w.duration_minutes) : null
+      const parts = [w.duration_minutes && `${w.duration_minutes}min`, km && `${km}km`, speed, d.location].filter(Boolean)
+      return `bike(${parts.join(' · ')}${effortStr})${noteStr}`
+    }
+    case 'strength': {
+      const exercises = (d.exercises ?? [])
+        .map(ex => ({ ...ex, est1RM: epley(ex.weight, ex.reps) }))
+        .sort((a, b) => b.est1RM - a.est1RM)
+        .slice(0, 3)
+        .map(ex => `${ex.name} ${ex.weight}kg×${ex.reps} 1RM~${ex.est1RM}kg`)
+      const detail = exercises.length ? exercises.join(', ') : (d.focus ?? []).join('+')
+      return `strength(${detail}${effortStr})${noteStr}`
+    }
+    case 'climb': {
+      const routes = (d.routes ?? []).map(r => `${r.grade} ${r.status}`).join(', ')
+      return `climb(${routes || '?'}${effortStr})${noteStr}`
+    }
+    case 'recover':
+      return `recover(${(d.types ?? []).join('+')}${effortStr})${noteStr}`
+    default:
+      return `${w.discipline}(${effortStr.trim()})${noteStr}`
+  }
+}
+
+const PB_DISTS = { swim: [100, 200, 300, 400, 500], bike: [5, 10, 15, 20, 25], run: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] }
+
+function buildPBsSection(allWorkouts) {
+  const pbs = { swim: {}, bike: {}, run: {} }
+  for (const w of allWorkouts) {
+    const dist = w.details?.distance
+    const dur  = w.duration_minutes
+    if (!dist || !dur || dist <= 0 || dur <= 0) continue
+    const pace = dur / dist
+    for (const target of PB_DISTS[w.discipline] ?? []) {
+      if (target > dist) continue
+      const time = pace * target
+      if (!pbs[w.discipline][target] || time < pbs[w.discipline][target]) {
+        pbs[w.discipline][target] = time
+      }
+    }
+  }
+  const bestLifts = {}
+  for (const w of allWorkouts) {
+    for (const ex of w.details?.exercises ?? []) {
+      if (!ex.weight || !ex.reps || ex.weight <= 0) continue
+      const est = epley(ex.weight, ex.reps)
+      if (!bestLifts[ex.name] || est > bestLifts[ex.name]) bestLifts[ex.name] = est
+    }
+  }
+  const topLifts = Object.entries(bestLifts).sort((a, b) => b[1] - a[1]).slice(0, 3)
+  const lines = ['== PERSONAL BESTS ==']
+  for (const disc of ['run', 'swim', 'bike']) {
+    const entries = Object.entries(pbs[disc])
+    if (!entries.length) continue
+    const label = disc.charAt(0).toUpperCase() + disc.slice(1)
+    const fmt = entries
+      .sort((a, b) => Number(a[0]) - Number(b[0]))
+      .map(([dist, mins]) => {
+        const unit = disc === 'swim' ? 'm' : 'km'
+        const pace = disc === 'swim' ? fmtSwimPace(mins / Number(dist)) : fmtPace(mins / Number(dist))
+        const total = fmtPace(mins)
+        return `${dist}${unit} ${total}${pace ? ` (${pace})` : ''}`
+      })
+      .join(' · ')
+    lines.push(`${label}: ${fmt}`)
+  }
+  if (topLifts.length) {
+    lines.push(`Strength: ${topLifts.map(([name, rm]) => `${name} 1RM~${rm}kg`).join(' · ')}`)
+  }
+  return lines.length > 1 ? lines.join('\n') : ''
 }
 
 function buildRecentHistory(allWorkouts) {
@@ -52,7 +156,10 @@ function buildRecentHistory(allWorkouts) {
 
   const today      = new Date()
   const thisMonday = toISODate(getMonday(today))
-  const allMondays = Object.keys(weekMap).sort()
+  const allMondays = Object.keys(weekMap).sort().filter(m => {
+    const weeksAgo = Math.round((new Date(thisMonday + 'T00:00:00') - new Date(m + 'T00:00:00')) / (7 * 86400000))
+    return weeksAgo <= 16
+  })
   const lines      = []
 
   for (const monday of allMondays) {
@@ -69,7 +176,7 @@ function buildRecentHistory(allWorkouts) {
         byDate[w.date].push(w)
       }
       for (const date of Object.keys(byDate).sort()) {
-        lines.push(`  ${date}: ${byDate[date].map(formatWorkoutLine).join('; ')}`)
+        lines.push(`  ${date}: ${byDate[date].map(w => formatWorkoutLine(w, true)).join('; ')}`)
       }
     } else {
       const unique   = [...new Set(workouts.map(w => w.discipline))]
@@ -81,7 +188,7 @@ function buildRecentHistory(allWorkouts) {
   return lines.join('\n')
 }
 
-function buildPrompt(profile, workoutHistory) {
+function buildPrompt(profile, workoutHistory, pbsSection) {
   const name   = profile.name || 'Athlete'
   const injury = profile.injury_flags || 'None'
   const today  = new Date()
@@ -115,8 +222,8 @@ ${todayStr}
 
 == ATHLETE ==
 ${athleteSection}
-
-== RECENT TRAINING (last 8 weeks) ==
+${pbsSection ? '\n' + pbsSection + '\n' : ''}
+== RECENT TRAINING (last 16 weeks) ==
 ${workoutHistory}
 
 == OUTPUT SCHEMA ==
@@ -229,7 +336,8 @@ module.exports = async function handler(req, res) {
   }
 
   const workoutHistory = buildRecentHistory(allWorkouts)
-  const prompt         = buildPrompt(profile, workoutHistory)
+  const pbsSection     = buildPBsSection(allWorkouts)
+  const prompt         = buildPrompt(profile, workoutHistory, pbsSection)
 
   // ── Call OpenAI ────────────────────────────────────────────────────────────
   const openaiRes = await fetch('https://api.openai.com/v1/chat/completions', {
