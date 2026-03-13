@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { Analytics } from '@vercel/analytics/react'
 import BottomNav from './components/BottomNav'
 import Auth from './screens/Auth'
 import Home from './screens/Home'
@@ -51,6 +52,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <AppLayout />
+        <Analytics />
       </AuthProvider>
     </BrowserRouter>
   )
