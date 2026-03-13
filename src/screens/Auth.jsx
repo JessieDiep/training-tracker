@@ -299,8 +299,7 @@ const s = {
     marginBottom: 24,
   },
   logo: {
-    width: 260,
-    maxWidth: '85%',
+    width: '100%',
     height: 'auto',
   },
   toggle: {
