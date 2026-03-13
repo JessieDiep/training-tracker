@@ -76,9 +76,8 @@ export default function Auth() {
 
           {/* Header */}
           <div style={s.header}>
-            <div style={s.logo}>🏃</div>
-            <div style={s.appName}>Jess Progressing</div>
-            <div style={s.appSub}>Training tracker</div>
+            <div style={s.appName}>Bloctrain</div>
+            <div style={s.appSub}>Train. Track. Improve.</div>
           </div>
 
           {/* Mode toggle */}
@@ -277,7 +276,7 @@ export default function Auth() {
 const s = {
   shell: {
     minHeight: '100dvh',
-    background: 'linear-gradient(135deg, #FFE8F0 0%, #F8E8FF 50%, #E8F4FF 100%)',
+    background: 'linear-gradient(135deg, #DBEAFE 0%, #E0F2FE 50%, #EFF6FF 100%)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -288,7 +287,7 @@ const s = {
     maxWidth: 375,
     background: 'var(--t-bg)',
     borderRadius: 28,
-    boxShadow: '0 16px 48px rgba(194,24,91,0.15)',
+    boxShadow: '0 16px 48px rgba(3,105,161,0.15)',
     overflow: 'hidden',
   },
   scroll: {
@@ -317,7 +316,7 @@ const s = {
   },
   toggle: {
     display: 'flex',
-    background: '#F7E8F0',
+    background: '#DBEAFE',
     borderRadius: 14,
     padding: 4,
     marginBottom: 20,
@@ -339,10 +338,10 @@ const s = {
   toggleActive: {
     background: '#fff',
     color: 'var(--t-active)',
-    boxShadow: '0 2px 8px rgba(194,24,91,0.15)',
+    boxShadow: '0 2px 8px rgba(3,105,161,0.15)',
   },
   errorBox: {
-    background: '#FFEEF3',
+    background: '#EFF6FF',
     border: '1.5px solid var(--t-border)',
     borderRadius: 10,
     padding: '10px 14px',
@@ -374,7 +373,7 @@ const s = {
     border: '1.5px solid var(--t-border)',
     background: 'var(--t-bg)',
     fontSize: 14,
-    color: '#3D0A1E',
+    color: '#0C3A5A',
     fontFamily: "'Nunito', system-ui, sans-serif",
     outline: 'none',
     boxSizing: 'border-box',
@@ -386,7 +385,7 @@ const s = {
     border: '1.5px solid var(--t-border)',
     background: 'var(--t-bg)',
     fontSize: 14,
-    color: '#3D0A1E',
+    color: '#0C3A5A',
     fontFamily: "'Nunito', system-ui, sans-serif",
     outline: 'none',
     resize: 'vertical',
@@ -397,7 +396,7 @@ const s = {
     display: 'flex',
     alignItems: 'center',
     gap: 12,
-    background: '#FFF0F6',
+    background: '#E0F2FE',
     borderRadius: 14,
     padding: '14px 14px',
     marginTop: 14,
@@ -427,7 +426,7 @@ const s = {
     boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
   },
   raceSection: {
-    background: '#FFF0F6',
+    background: '#E0F2FE',
     borderRadius: 14,
     padding: '8px 14px 14px',
     marginTop: 4,
@@ -478,7 +477,7 @@ const s = {
     background: 'var(--t-bg)',
     fontSize: 15,
     fontWeight: 700,
-    color: '#3D0A1E',
+    color: '#0C3A5A',
     fontFamily: "'Nunito', system-ui, sans-serif",
     outline: 'none',
     textAlign: 'center',
@@ -501,6 +500,6 @@ const s = {
     fontWeight: 800,
     cursor: 'pointer',
     fontFamily: "'Nunito', system-ui, sans-serif",
-    boxShadow: '0 4px 16px rgba(233,30,140,0.3)',
+    boxShadow: '0 4px 16px rgba(14,165,233,0.3)',
   },
 }
