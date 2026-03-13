@@ -1,15 +1,30 @@
-﻿import { useState } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 
 export default function Auth() {
-  const { signIn, signUp } = useAuth()
-  const [mode,    setMode]    = useState('login')   // 'login' | 'signup'
+  const { signIn, signUp, resetPassword } = useAuth()
+  const [mode,    setMode]    = useState('login')   // 'login' | 'signup' | 'forgot' | 'update'
   const [error,   setError]   = useState('')
   const [loading, setLoading] = useState(false)
+  const [forgotSent, setForgotSent] = useState(false)
+
+  // Detect password recovery link click
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'PASSWORD_RECOVERY') setMode('update')
+    })
+    return () => subscription.unsubscribe()
+  }, [])
 
   // Login fields
   const [loginEmail,    setLoginEmail]    = useState('')
   const [loginPassword, setLoginPassword] = useState('')
+
+  // Forgot / update password fields
+  const [forgotEmail,   setForgotEmail]   = useState('')
+  const [newPassword,   setNewPassword]   = useState('')
+  const [confirmPw,     setConfirmPw]     = useState('')
 
   // Sign-up fields
   const [name,          setName]          = useState('')
@@ -69,6 +84,37 @@ export default function Auth() {
     }
   }
 
+  async function handleForgot(e) {
+    e.preventDefault()
+    setError('')
+    if (!forgotEmail.trim()) { setError('Email is required'); return }
+    setLoading(true)
+    try {
+      await resetPassword(forgotEmail.trim())
+      setForgotSent(true)
+    } catch (err) {
+      setError(err.message || 'Failed to send reset email')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleUpdatePassword(e) {
+    e.preventDefault()
+    setError('')
+    if (newPassword.length < 6) { setError('Password must be at least 6 characters'); return }
+    if (newPassword !== confirmPw) { setError('Passwords do not match'); return }
+    setLoading(true)
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword })
+      if (error) throw error
+    } catch (err) {
+      setError(err.message || 'Failed to update password')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div style={s.shell}>
       <div style={s.phone}>
@@ -79,21 +125,71 @@ export default function Auth() {
             <img src="/icons/logo.svg" alt="Bloctrain" style={s.logo} />
           </div>
 
-          {/* Mode toggle */}
-          <div style={s.toggle}>
-            <button
-              style={{ ...s.toggleBtn, ...(mode === 'login' ? s.toggleActive : {}) }}
-              onClick={() => { setMode('login'); setError('') }}
-            >Log in</button>
-            <button
-              style={{ ...s.toggleBtn, ...(mode === 'signup' ? s.toggleActive : {}) }}
-              onClick={() => { setMode('signup'); setError('') }}
-            >Sign up</button>
-          </div>
+          {/* Mode toggle — hidden for forgot/update flows */}
+          {(mode === 'login' || mode === 'signup') && (
+            <div style={s.toggle}>
+              <button
+                style={{ ...s.toggleBtn, ...(mode === 'login' ? s.toggleActive : {}) }}
+                onClick={() => { setMode('login'); setError('') }}
+              >Log in</button>
+              <button
+                style={{ ...s.toggleBtn, ...(mode === 'signup' ? s.toggleActive : {}) }}
+                onClick={() => { setMode('signup'); setError('') }}
+              >Sign up</button>
+            </div>
+          )}
 
           {error && <div style={s.errorBox}>{error}</div>}
 
-          {mode === 'login' ? (
+          {mode === 'update' ? (
+            <form onSubmit={handleUpdatePassword} style={s.form}>
+              <div style={s.forgotTitle}>Set a new password</div>
+              <label style={s.label}>New password</label>
+              <input
+                style={s.input}
+                type="password"
+                placeholder="At least 6 characters"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                autoComplete="new-password"
+              />
+              <label style={s.label}>Confirm password</label>
+              <input
+                style={s.input}
+                type="password"
+                placeholder="Repeat password"
+                value={confirmPw}
+                onChange={e => setConfirmPw(e.target.value)}
+                autoComplete="new-password"
+              />
+              <button style={s.submitBtn} type="submit" disabled={loading}>
+                {loading ? 'Saving…' : 'Set new password'}
+              </button>
+            </form>
+          ) : mode === 'forgot' ? (
+            forgotSent ? (
+              <div style={s.successBox}>Check your email for a reset link.</div>
+            ) : (
+              <form onSubmit={handleForgot} style={s.form}>
+                <div style={s.forgotTitle}>Reset your password</div>
+                <label style={s.label}>Email</label>
+                <input
+                  style={s.input}
+                  type="email"
+                  placeholder="you@example.com"
+                  value={forgotEmail}
+                  onChange={e => setForgotEmail(e.target.value)}
+                  autoComplete="email"
+                />
+                <button style={s.submitBtn} type="submit" disabled={loading}>
+                  {loading ? 'Sending…' : 'Send reset email'}
+                </button>
+                <button type="button" style={s.forgotBack} onClick={() => { setMode('login'); setError('') }}>
+                  Back to log in
+                </button>
+              </form>
+            )
+          ) : mode === 'login' ? (
             <form onSubmit={handleLogin} style={s.form}>
               <label style={s.label}>Email</label>
               <input
@@ -117,6 +213,9 @@ export default function Auth() {
 
               <button style={s.submitBtn} type="submit" disabled={loading}>
                 {loading ? 'Logging in…' : 'Log in'}
+              </button>
+              <button type="button" style={s.forgotLink} onClick={() => { setMode('forgot'); setError(''); setForgotSent(false) }}>
+                Forgot password?
               </button>
             </form>
           ) : (
@@ -489,5 +588,48 @@ const s = {
     cursor: 'pointer',
     fontFamily: "'Nunito', system-ui, sans-serif",
     boxShadow: '0 4px 16px rgba(14,165,233,0.3)',
+  },
+  forgotLink: {
+    display: 'block',
+    width: '100%',
+    background: 'none',
+    border: 'none',
+    marginTop: 12,
+    fontSize: 13,
+    fontWeight: 700,
+    color: 'var(--t-muted)',
+    cursor: 'pointer',
+    fontFamily: "'Nunito', system-ui, sans-serif",
+    textAlign: 'center',
+  },
+  forgotBack: {
+    display: 'block',
+    width: '100%',
+    background: 'none',
+    border: 'none',
+    marginTop: 10,
+    fontSize: 13,
+    fontWeight: 700,
+    color: 'var(--t-muted)',
+    cursor: 'pointer',
+    fontFamily: "'Nunito', system-ui, sans-serif",
+    textAlign: 'center',
+  },
+  forgotTitle: {
+    fontSize: 16,
+    fontWeight: 800,
+    color: 'var(--t-dark)',
+    marginBottom: 4,
+  },
+  successBox: {
+    background: '#E0F2FE',
+    border: '1.5px solid var(--t-border)',
+    borderRadius: 10,
+    padding: '16px 14px',
+    fontSize: 14,
+    fontWeight: 700,
+    color: 'var(--t-active)',
+    textAlign: 'center',
+    marginTop: 8,
   },
 }
