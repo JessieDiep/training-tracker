@@ -1,14 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Background circle -->
-  <circle cx="256" cy="256" r="256" fill="#FFB8C6"/>
-  <!-- Inner lighter circle -->
-  <circle cx="256" cy="256" r="210" fill="#FFF5F8"/>
-  <!-- JP monogram -->
-  <text x="256" y="310" font-family="Arial, sans-serif" font-size="180" font-weight="900"
-    text-anchor="middle" fill="#C2185B" letter-spacing="-8">JP</text>
-  <!-- Decorative dots -->
-  <circle cx="130" cy="130" r="14" fill="#F48FB1" opacity="0.6"/>
-  <circle cx="382" cy="130" r="10" fill="#F48FB1" opacity="0.4"/>
-  <circle cx="150" cy="380" r="8"  fill="#F48FB1" opacity="0.4"/>
-  <circle cx="370" cy="390" r="12" fill="#F48FB1" opacity="0.5"/>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#7DD3FC"/>
+      <stop offset="100%" stop-color="#0EA5E9"/>
+    </linearGradient>
+    <linearGradient id="g2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0EA5E9"/>
+      <stop offset="100%" stop-color="#0369A1"/>
+    </linearGradient>
+    <linearGradient id="g3" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#0C4A6E"/>
+      <stop offset="100%" stop-color="#0369A1"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="512" height="512" rx="80" fill="#0C4A6E"/>
+  <rect x="102" y="346" width="128" height="128" rx="24" fill="url(#g3)"/>
+  <rect x="192" y="256" width="128" height="128" rx="24" fill="url(#g2)"/>
+  <rect x="282" y="166" width="128" height="128" rx="24" fill="url(#g1)"/>
+  <!-- Shortened chevron arms -->
+  <line x1="314" y1="132" x2="346" y2="90" stroke="#7DD3FC" stroke-width="10" stroke-linecap="round" opacity="0.85"/>
+  <line x1="346" y1="90"  x2="378" y2="132" stroke="#7DD3FC" stroke-width="10" stroke-linecap="round" opacity="0.85"/>
+  <line x1="346" y1="90"  x2="346" y2="158" stroke="#7DD3FC" stroke-width="10" stroke-linecap="round" opacity="0.85"/>
 </svg>

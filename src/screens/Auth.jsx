@@ -76,8 +76,7 @@ export default function Auth() {
 
           {/* Header */}
           <div style={s.header}>
-            <div style={s.appName}>Bloctrain</div>
-            <div style={s.appSub}>Train. Track. Improve.</div>
+            <img src="/icons/logo.svg" alt="Bloctrain" style={s.logo} />
           </div>
 
           {/* Mode toggle */}
@@ -300,19 +299,9 @@ const s = {
     marginBottom: 24,
   },
   logo: {
-    fontSize: 40,
-    marginBottom: 8,
-  },
-  appName: {
-    fontSize: 22,
-    fontWeight: 900,
-    color: 'var(--t-dark)',
-    letterSpacing: -0.5,
-  },
-  appSub: {
-    fontSize: 13,
-    color: 'var(--t-muted)',
-    marginTop: 2,
+    width: 260,
+    maxWidth: '85%',
+    height: 'auto',
   },
   toggle: {
     display: 'flex',
