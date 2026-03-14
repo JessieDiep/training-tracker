@@ -62,6 +62,9 @@ export function AuthProvider({ children }) {
       .from('profiles')
       .insert({ id: data.user.id, ...profileData })
     if (pErr) throw pErr
+    // onAuthStateChange may have fired before the INSERT completed and found
+    // no profile — re-fetch now that it definitely exists
+    await fetchProfile(data.user.id)
   }
 
   async function signOut() {
