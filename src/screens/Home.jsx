@@ -594,7 +594,7 @@ const ss = {
 // ── HOME SCREEN ───────────────────────────────────────────────────────────────
 export default function Home() {
   const navigate = useNavigate()
-  const { profile, signOut, updateProfile } = useAuth()
+  const { profile, signOut, updateProfile, user, exitGuest } = useAuth()
   const [showSettings, setShowSettings] = useState(false)
 
   // Derive race date string and Date object from profile
@@ -768,6 +768,27 @@ export default function Home() {
     bike: weekWorkouts.filter(w => w.discipline === 'bike').length,
     run:  weekWorkouts.filter(w => w.discipline === 'run').length,
   }
+
+  if (!user) return (
+    <div style={s.screen}>
+      <style>{css}</style>
+      <div style={s.header}>
+        <div>
+          <div style={s.headerGreeting}>Hey there 👋</div>
+          <div style={s.headerSub}>Welcome to Bloctrain</div>
+        </div>
+      </div>
+      <div style={{ ...s.scroll, display: 'flex', flexDirection: 'column', alignItems: 'stretch', justifyContent: 'center', padding: '0 20px', gap: 16 }}>
+        <div style={s.guestCard}>
+          <div style={s.guestCardIcon}>🏅</div>
+          <div style={s.guestCardTitle}>Track your training</div>
+          <div style={s.guestCardDesc}>Log workouts, hit personal bests, and follow an AI-generated plan tailored to your goals.</div>
+          <button style={s.guestSignupBtn} onClick={exitGuest}>Create free account</button>
+          <button style={s.guestLoginBtn} onClick={exitGuest}>Log in</button>
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <div style={s.screen}>
@@ -965,6 +986,21 @@ const s = {
     fontFamily: "'Nunito', system-ui, sans-serif",
     position: 'relative',
   },
+  guestCard: {
+    background: 'var(--t-surface)',
+    borderRadius: 20,
+    border: '1.5px solid var(--t-border)',
+    padding: '28px 20px 20px',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 10,
+  },
+  guestCardIcon: { fontSize: 40, lineHeight: 1 },
+  guestCardTitle: { fontSize: 20, fontWeight: 900, color: 'var(--t-dark)', textAlign: 'center' },
+  guestCardDesc: { fontSize: 14, fontWeight: 600, color: 'var(--t-muted)', textAlign: 'center', lineHeight: 1.5, marginBottom: 6 },
+  guestSignupBtn: { width: '100%', padding: '14px 0', borderRadius: 14, border: 'none', background: 'linear-gradient(135deg, var(--t-soft), var(--t-accent))', color: '#fff', fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' },
+  guestLoginBtn: { width: '100%', padding: '13px 0', borderRadius: 14, border: '2px solid var(--t-border)', background: 'transparent', color: 'var(--t-active)', fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' },
   header: {
     display: 'flex',
     justifyContent: 'space-between',

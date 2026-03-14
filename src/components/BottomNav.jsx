@@ -101,9 +101,10 @@ const TABS = [
 
 export default function BottomNav({ activeTab }) {
   const navigate = useNavigate()
-  const { profile } = useAuth()
+  const { profile, guest } = useAuth()
 
-  const visibleTabs = TABS.filter(t => !t.raceOnly || profile?.has_race)
+  // Guests always see Plan (it shows a GuestLock overlay). Logged-in users only see it if they have a race.
+  const visibleTabs = TABS.filter(t => !t.raceOnly || guest || profile?.has_race)
 
   return (
     <div style={styles.nav}>

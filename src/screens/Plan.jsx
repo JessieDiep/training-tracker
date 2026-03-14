@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import GuestLock from '../components/GuestLock'
 import { supabase } from '../lib/supabase'
 import { getThisWeekWorkouts } from '../lib/workouts'
 
@@ -22,7 +23,8 @@ function toISODate(date) {
 }
 
 export default function Plan() {
-  const { profile } = useAuth()
+  const { profile, user } = useAuth()
+  if (!user) return <GuestLock title="Your Weekly Plan" description="Sign up to get an AI-generated training plan tailored to your race and fitness level." />
 
   const [weeklyGoals,   setWeeklyGoals]  = useState(null)
   const [accepted,      setAccepted]     = useState(false)

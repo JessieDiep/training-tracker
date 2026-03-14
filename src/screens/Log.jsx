@@ -443,9 +443,10 @@ function ClimbForm({ data, setData }) {
 // ── MAIN ─────────────────────────────────────────────────────────────────────
 export default function Log() {
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, exitGuest } = useAuth()
 
   const [step,          setStep]         = useState('discipline')
+  const [guestSheet,    setGuestSheet]   = useState(false)
   const [selectedDisc,  setSelectedDisc] = useState(null)
   const [duration,      setDuration]     = useState(45)
   const [effort,        setEffort]       = useState(5)
@@ -604,7 +605,7 @@ export default function Log() {
                 <button key={d.id}
                   style={{ ...s.discCard, background: d.bg, border: `2px solid ${d.color}` }}
                   className="disc-card"
-                  onClick={() => { setSelectedDisc(d.id); setStep('details') }}>
+                  onClick={() => { if (!user) { setGuestSheet(true) } else { setSelectedDisc(d.id); setStep('details') } }}>
                   <span style={s.discEmoji}>{d.emoji}</span>
                   <span style={{ ...s.discLabel, color: d.dark }}>{d.label}</span>
                 </button>
@@ -642,6 +643,19 @@ export default function Log() {
         )}
         <div style={{ height: 32 }} />
       </div>
+
+      {/* Guest sign-up sheet */}
+      {guestSheet && (
+        <div style={s.guestOverlay} onClick={() => setGuestSheet(false)}>
+          <div style={s.guestSheet} onClick={e => e.stopPropagation()}>
+            <div style={s.guestSheetTitle}>Ready to log a workout?</div>
+            <div style={s.guestSheetDesc}>Create a free account to save your training history.</div>
+            <button style={s.guestSignupBtn} onClick={exitGuest}>Sign up</button>
+            <button style={s.guestLoginBtn} onClick={exitGuest}>Log in</button>
+            <button style={s.guestDismiss} onClick={() => setGuestSheet(false)}>Maybe later</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -717,6 +731,13 @@ const s = {
   emptyRoutes: { textAlign: 'center', color: '#D4B0C0', fontSize: 13, fontWeight: 600, padding: '12px 0 6px' },
   addRouteBtn: { width: '100%', marginTop: 4, background: '#FFE8EE', border: '2px dashed #FFB8C6', borderRadius: 12, padding: '10px 0', fontSize: 13, fontWeight: 800, color: '#C4354F', cursor: 'pointer', fontFamily: 'inherit' },
 
+  guestOverlay:    { position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(3px)', zIndex: 200, display: 'flex', alignItems: 'flex-end' },
+  guestSheet:      { width: '100%', background: 'var(--t-bg)', borderRadius: '22px 22px 0 0', padding: '24px 20px 36px', display: 'flex', flexDirection: 'column', gap: 10 },
+  guestSheetTitle: { fontSize: 20, fontWeight: 900, color: 'var(--t-dark)', textAlign: 'center', marginBottom: 2 },
+  guestSheetDesc:  { fontSize: 14, fontWeight: 600, color: 'var(--t-muted)', textAlign: 'center', marginBottom: 6 },
+  guestSignupBtn:  { width: '100%', padding: '14px 0', borderRadius: 14, border: 'none', background: 'linear-gradient(135deg, var(--t-soft), var(--t-accent))', color: '#fff', fontSize: 16, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' },
+  guestLoginBtn:   { width: '100%', padding: '13px 0', borderRadius: 14, border: '2px solid var(--t-border)', background: 'var(--t-surface)', color: 'var(--t-active)', fontSize: 15, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit' },
+  guestDismiss:    { width: '100%', background: 'none', border: 'none', color: 'var(--t-muted)', fontSize: 13, fontWeight: 700, cursor: 'pointer', padding: '4px 0', fontFamily: 'inherit', textAlign: 'center' },
   saveBtn:      { width: '100%', marginTop: 20, background: 'linear-gradient(135deg, var(--t-soft), var(--t-accent))', border: 'none', borderRadius: 14, color: '#fff', fontSize: 16, fontWeight: 800, padding: '14px 0', cursor: 'pointer', boxShadow: '0 4px 14px var(--t-phone-shadow)', fontFamily: 'inherit' },
   requiredHint: { textAlign: 'center', fontSize: 11, color: '#C4354F', fontWeight: 700, marginTop: 6 },
   cancelBtn:    { width: '100%', marginTop: 8, marginBottom: 4, background: 'transparent', border: 'none', color: 'var(--t-muted)', fontSize: 13, fontWeight: 700, cursor: 'pointer', padding: '6px 0', fontFamily: 'inherit' },

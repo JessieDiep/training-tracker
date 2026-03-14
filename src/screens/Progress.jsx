@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect } from 'react'
 import { getWeeklyVolumeData, getClimbSends, getTriWorkouts, getStrengthWorkouts } from '../lib/workouts'
 import { useAuth } from '../contexts/AuthContext'
+import GuestLock from '../components/GuestLock'
 
 // Grade → colour mapping (easiest → hardest)
 const GRADE_COLORS = {
@@ -213,7 +214,8 @@ function ClimbChart({ data }) {
 
 // ── MAIN ─────────────────────────────────────────────────────────────────────
 export default function Progress() {
-  const { profile } = useAuth()
+  const { profile, user } = useAuth()
+  if (!user) return <GuestLock title="Your Progress" description="Sign up to track personal bests, training volume, and strength trends." />
   const RACE_DIST = profile?.has_race && profile?.race_distances ? profile.race_distances : null
 
   const [activeDisc,  setActiveDisc]  = useState('swim')

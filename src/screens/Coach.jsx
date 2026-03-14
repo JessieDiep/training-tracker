@@ -2,6 +2,7 @@
 import { getRecentWorkouts, getThisWeekWorkouts, formatWorkoutDetail, getDiscEmoji, getDiscStyle, formatRelativeDate } from '../lib/workouts'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import GuestLock from '../components/GuestLock'
 
 const PROMPT_CHIPS = [
   "Am I on track for sub-2hr?",
@@ -158,6 +159,7 @@ const ty = { dot: { width: 7, height: 7, borderRadius: 4, background: 'var(--t-m
 // ── MAIN ─────────────────────────────────────────────────────────────────────
 export default function Coach() {
   const { user, profile } = useAuth()
+  if (!user) return <GuestLock title="Your Coach" description="Sign up to chat with your AI coach about training, recovery, and race prep." />
 
   const firstName   = profile?.name?.split(' ')[0] ?? 'there'
   const storageKey  = `coach_messages_v1_${user?.id ?? 'anon'}`

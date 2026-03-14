@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 
 export default function Auth() {
-  const { signIn, signUp, resetPassword, recoveryMode, clearRecoveryMode } = useAuth()
+  const { signIn, signUp, resetPassword, recoveryMode, clearRecoveryMode, continueAsGuest } = useAuth()
   const [mode,    setMode]    = useState('login')   // 'login' | 'signup' | 'forgot' | 'update'
   const [error,   setError]   = useState('')
   const [loading, setLoading] = useState(false)
@@ -215,6 +215,12 @@ export default function Auth() {
               <button type="button" style={s.forgotLink} onClick={() => { setMode('forgot'); setError(''); setForgotSent(false) }}>
                 Forgot password?
               </button>
+              <div style={s.guestDivider}>
+                <div style={s.guestDividerLine}/><span>or</span><div style={s.guestDividerLine}/>
+              </div>
+              <button type="button" style={s.guestLink} onClick={continueAsGuest}>
+                Continue as guest
+              </button>
             </form>
           ) : (
             <form onSubmit={handleSignUp} style={s.form}>
@@ -360,6 +366,12 @@ export default function Auth() {
 
               <button style={s.submitBtn} type="submit" disabled={loading}>
                 {loading ? 'Creating account…' : 'Create account'}
+              </button>
+              <div style={s.guestDivider}>
+                <div style={s.guestDividerLine}/><span>or</span><div style={s.guestDividerLine}/>
+              </div>
+              <button type="button" style={s.guestLink} onClick={continueAsGuest}>
+                Continue as guest
               </button>
             </form>
           )}
@@ -612,6 +624,35 @@ const s = {
     cursor: 'pointer',
     fontFamily: "'Nunito', system-ui, sans-serif",
     textAlign: 'center',
+  },
+  guestDivider: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    margin: '14px 0 2px',
+    color: 'var(--t-muted)',
+    fontSize: 12,
+    fontWeight: 600,
+  },
+  guestDividerLine: {
+    flex: 1,
+    height: 1,
+    background: 'var(--t-border)',
+  },
+  guestLink: {
+    display: 'block',
+    width: '100%',
+    background: 'none',
+    border: 'none',
+    marginTop: 4,
+    fontSize: 13,
+    fontWeight: 700,
+    color: 'var(--t-muted)',
+    cursor: 'pointer',
+    fontFamily: "'Nunito', system-ui, sans-serif",
+    textAlign: 'center',
+    textDecoration: 'underline',
+    textUnderlineOffset: 3,
   },
   forgotTitle: {
     fontSize: 16,

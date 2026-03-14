@@ -8,6 +8,7 @@ export function AuthProvider({ children }) {
   const [profile,      setProfile]      = useState(null)
   const [loading,      setLoading]      = useState(true)
   const [recoveryMode, setRecoveryMode] = useState(false)
+  const [guest,        setGuest]        = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -75,6 +76,14 @@ export function AuthProvider({ children }) {
     setRecoveryMode(false)
   }
 
+  function continueAsGuest() {
+    setGuest(true)
+  }
+
+  function exitGuest() {
+    setGuest(false)
+  }
+
   async function resetPassword(email) {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin,
@@ -93,7 +102,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, recoveryMode, clearRecoveryMode, signIn, signUp, signOut, refreshProfile, updateProfile, resetPassword }}>
+    <AuthContext.Provider value={{ user, profile, loading, recoveryMode, clearRecoveryMode, guest, continueAsGuest, exitGuest, signIn, signUp, signOut, refreshProfile, updateProfile, resetPassword }}>
       {children}
     </AuthContext.Provider>
   )
