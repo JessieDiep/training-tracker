@@ -624,6 +624,7 @@ export default function Home() {
   const [ringProgress,    setRingProgress]    = useState(0)
   const [weeklyGoals,     setWeeklyGoals]     = useState(null)
   const [goalsLoading,    setGoalsLoading]    = useState(true)
+  const [gsProgressDone,  setGsProgressDone]  = useState(() => !!localStorage.getItem('tt_gs_progress'))
 
   // Fetch workouts on mount (independent of race date)
   useEffect(() => {
@@ -923,18 +924,19 @@ export default function Home() {
               Couldn't load workouts — check Supabase env vars and restart the dev server
             </div>
           )}
-          {!loading && !fetchError && recentWorkouts.length === 0 && (
+          {!loading && !fetchError && !(recentWorkouts.length > 0 && gsProgressDone) && (
             <div style={s.gettingStarted}>
               <div style={s.gsTitle}>Getting started</div>
               {[
-                { label: 'Create your account', done: true, path: null },
-                { label: 'Log your first workout', done: false, path: '/log' },
-                { label: 'Check your stats', done: false, path: '/progress' },
+                { label: 'Create your account',   done: true,                       path: null },
+                { label: 'Log your first workout', done: recentWorkouts.length > 0,  path: '/log' },
+                { label: 'Check your stats',       done: gsProgressDone,             path: '/progress',
+                  onTap: () => { localStorage.setItem('tt_gs_progress', '1'); setGsProgressDone(true); navigate('/progress') } },
               ].map((step, i) => (
                 <div
                   key={i}
                   style={{ ...s.gsStep, cursor: step.path ? 'pointer' : 'default' }}
-                  onClick={() => step.path && navigate(step.path)}
+                  onClick={() => step.onTap ? step.onTap() : step.path && navigate(step.path)}
                 >
                   <span style={{ ...s.gsCheck, background: step.done ? 'var(--t-active)' : 'var(--t-border)' }}>
                     {step.done ? '✓' : ''}
@@ -942,7 +944,7 @@ export default function Home() {
                   <span style={{ ...s.gsLabel, color: step.done ? 'var(--t-muted)' : 'var(--t-dark)', textDecoration: step.done ? 'line-through' : 'none' }}>
                     {step.label}
                   </span>
-                  {step.path && <span style={s.gsArrow}>›</span>}
+                  {step.path && !step.done && <span style={s.gsArrow}>›</span>}
                 </div>
               ))}
             </div>
