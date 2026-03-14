@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — Bloctrain</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Nunito', system-ui, -apple-system, sans-serif;
+      background: #F0F9FF;
+      color: #0C3A5A;
+      line-height: 1.7;
+      padding: 32px 20px 64px;
+      max-width: 680px;
+      margin: 0 auto;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 36px;
+    }
+    header img { height: 32px; }
+    h1 { font-size: 26px; font-weight: 900; color: #0C4A6E; margin-bottom: 6px; }
+    .updated { font-size: 13px; color: #64748B; margin-bottom: 36px; }
+    h2 { font-size: 17px; font-weight: 800; color: #0C4A6E; margin: 28px 0 8px; }
+    p, li { font-size: 15px; color: #334155; margin-bottom: 8px; }
+    ul { padding-left: 20px; margin-bottom: 8px; }
+    a { color: #0EA5E9; }
+    .back {
+      display: inline-block;
+      margin-top: 40px;
+      font-size: 14px;
+      font-weight: 700;
+      color: #0EA5E9;
+      text-decoration: none;
+    }
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+  </style>
+</head>
+<body>
+
+  <header>
+    <img src="/icons/logo.svg" alt="Bloctrain" />
+  </header>
+
+  <h1>Privacy Policy</h1>
+  <p class="updated">Last updated: March 2026</p>
+
+  <p>Bloctrain ("the app", "we", "us") is a personal training tracker. This policy explains what data we collect, how we use it, and your rights.</p>
+
+  <h2>What we collect</h2>
+  <ul>
+    <li><strong>Account data:</strong> your email address and a hashed password when you create an account.</li>
+    <li><strong>Profile data:</strong> your name, race details (name, date, distances), injury notes, and training preferences — only what you choose to enter.</li>
+    <li><strong>Workout data:</strong> the workouts you log (discipline, date, duration, effort, notes, and sport-specific details like distance or climbing grades).</li>
+    <li><strong>Anonymous analytics:</strong> page views and navigation events collected by <a href="https://vercel.com/analytics" target="_blank" rel="noopener">Vercel Analytics</a>. No personal identifiers are attached to these events.</li>
+  </ul>
+
+  <h2>How we use your data</h2>
+  <ul>
+    <li>To display your training history, progress charts, and personal bests.</li>
+    <li>To generate your AI weekly training plan and power the Coach chat. Your workout history and profile are sent to OpenAI's API to generate responses. OpenAI does not use this data to train their models (API usage policy).</li>
+    <li>To show a race countdown and track progress toward your race goal.</li>
+  </ul>
+
+  <h2>How we store your data</h2>
+  <p>Your data is stored in <a href="https://supabase.com" target="_blank" rel="noopener">Supabase</a>, a managed PostgreSQL database. Row-Level Security ensures your data is only accessible to your own account — no other user can see your workouts.</p>
+
+  <h2>What we don't do</h2>
+  <ul>
+    <li>We do not sell your data.</li>
+    <li>We do not share your data with third parties, except as described above (Supabase for storage, OpenAI for AI features, Vercel for hosting and analytics).</li>
+    <li>We do not send marketing emails.</li>
+  </ul>
+
+  <h2>Your rights</h2>
+  <p>You can request access to, correction of, or deletion of your personal data at any time. To delete your account and all associated data, email us at <a href="mailto:help@bloctrain.org">help@bloctrain.org</a>.</p>
+  <p>If you are in the European Economic Area (EEA), you have additional rights under GDPR, including the right to data portability and the right to lodge a complaint with your local supervisory authority.</p>
+
+  <h2>Cookies</h2>
+  <p>Bloctrain does not use tracking cookies. Vercel Analytics uses a privacy-first approach that does not rely on cookies or fingerprinting.</p>
+
+  <h2>Children</h2>
+  <p>Bloctrain is not directed at children under 13. We do not knowingly collect data from anyone under 13.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>If we make material changes, we'll update the "Last updated" date at the top of this page.</p>
+
+  <h2>Contact</h2>
+  <p>Questions or data requests: <a href="mailto:help@bloctrain.org">help@bloctrain.org</a></p>
+
+  <a class="back" href="javascript:history.back()">← Back to Bloctrain</a>
+
+</body>
+</html>

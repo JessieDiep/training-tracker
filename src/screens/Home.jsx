@@ -312,6 +312,8 @@ const FAQ_ITEMS = [
   { q: 'What does the coach know?',     a: 'Coach sees your full workout history and your profile (race details, injury flags). It uses this to give personalised advice.' },
   { q: 'Will I get logged out?',        a: 'No — your session is saved indefinitely. Tap "Sign out" only when you need to switch accounts.' },
   { q: 'Can friends use the same app?', a: 'Yes! Each person creates their own account. Data is completely isolated — no one sees your workouts.' },
+  { q: 'What is the Plan tab?',         a: 'Plan generates a personalised weekly training plan using AI — balancing swim, bike, and run sessions around your race date and current fitness. It\'s only available if you\'re training for a race. Add your race in Settings to unlock it.' },
+  { q: 'Why can\'t I see the Plan tab?', a: 'Plan is only shown when you have an active race goal set. Go to Settings (the ⚙️ icon on Home) and enable "I\'m training for a race" to unlock it.' },
 ]
 
 function SettingsSheet({ profile, onClose, onSignOut, onSave }) {
@@ -512,6 +514,9 @@ function SettingsSheet({ profile, onClose, onSignOut, onSave }) {
           ☕ Support this app on Ko-fi
         </a>
 
+        {/* Privacy */}
+        <a href="/privacy.html" target="_blank" rel="noopener noreferrer" style={ss.privacyLink}>Privacy Policy</a>
+
         {/* Sign out */}
         <button style={ss.signOutBtn} onClick={onSignOut}>Sign out</button>
 
@@ -587,6 +592,7 @@ const ss = {
   faqA:         { fontSize: 12, color: 'var(--t-subtext)', lineHeight: 1.6, padding: '8px 0 10px', borderBottom: '1px solid var(--t-border)' },
   kofiBtn:      { display: 'block', textAlign: 'center', marginTop: 20, padding: '11px 0', borderRadius: 13, background: 'var(--t-surface)', border: '1.5px solid var(--t-border)', fontSize: 13, fontWeight: 700, color: 'var(--t-muted)', textDecoration: 'none' },
   signOutBtn:   { width: '100%', background: 'var(--t-surface)', border: '1.5px solid var(--t-border)', borderRadius: 13, padding: '12px 0', fontSize: 14, fontWeight: 800, color: '#C4354F', cursor: 'pointer', fontFamily: 'inherit', marginTop: 12 },
+  privacyLink:  { display: 'block', textAlign: 'center', marginTop: 16, fontSize: 12, fontWeight: 600, color: 'var(--t-muted)', textDecoration: 'underline', textUnderlineOffset: 3 },
   themeRow:     { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 },
   themeBtn:     { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, padding: '10px 4px', borderRadius: 14, cursor: 'pointer', fontFamily: 'inherit', background: 'none' },
 }
@@ -918,7 +924,28 @@ export default function Home() {
             </div>
           )}
           {!loading && !fetchError && recentWorkouts.length === 0 && (
-            <div style={s.emptyState}>No workouts yet — log your first one!</div>
+            <div style={s.gettingStarted}>
+              <div style={s.gsTitle}>Getting started</div>
+              {[
+                { label: 'Create your account', done: true, path: null },
+                { label: 'Log your first workout', done: false, path: '/log' },
+                { label: 'Check your stats', done: false, path: '/progress' },
+              ].map((step, i) => (
+                <div
+                  key={i}
+                  style={{ ...s.gsStep, cursor: step.path ? 'pointer' : 'default' }}
+                  onClick={() => step.path && navigate(step.path)}
+                >
+                  <span style={{ ...s.gsCheck, background: step.done ? 'var(--t-active)' : 'var(--t-border)' }}>
+                    {step.done ? '✓' : ''}
+                  </span>
+                  <span style={{ ...s.gsLabel, color: step.done ? 'var(--t-muted)' : 'var(--t-dark)', textDecoration: step.done ? 'line-through' : 'none' }}>
+                    {step.label}
+                  </span>
+                  {step.path && <span style={s.gsArrow}>›</span>}
+                </div>
+              ))}
+            </div>
           )}
           {recentWorkouts.map((w, i) => {
             const dc = getDiscStyle(w.discipline)
@@ -1096,6 +1123,12 @@ const s = {
   recentDetail: { fontSize: 11, color: '#B8A0B0', marginTop: 1 },
   recentTime:   { fontSize: 10, color: 'var(--t-muted)', fontWeight: 600, flexShrink: 0 },
   emptyState:   { textAlign: 'center', color: '#D4B0C0', fontSize: 13, fontWeight: 600, padding: '20px 0' },
+  gettingStarted: { background: 'var(--t-surface)', border: '1.5px solid var(--t-border)', borderRadius: 16, padding: '16px 16px 8px', marginBottom: 8, display: 'flex', flexDirection: 'column', gap: 0 },
+  gsTitle:      { fontSize: 11, fontWeight: 800, color: 'var(--t-muted)', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 },
+  gsStep:       { display: 'flex', alignItems: 'center', gap: 10, padding: '8px 0', borderBottom: '1px solid var(--t-border)' },
+  gsCheck:      { width: 20, height: 20, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 900, color: '#fff', flexShrink: 0 },
+  gsLabel:      { flex: 1, fontSize: 14, fontWeight: 700 },
+  gsArrow:      { fontSize: 18, color: 'var(--t-muted)', fontWeight: 300 },
   errorState:   { textAlign: 'center', color: '#C4354F', fontSize: 12, fontWeight: 600, padding: '20px 0', lineHeight: 1.5 },
   loadMoreBtn:  { width: '100%', padding: '10px 0', background: 'transparent', border: '1.5px solid var(--t-border)', borderRadius: 12, fontSize: 12, fontWeight: 700, color: 'var(--t-muted)', cursor: 'pointer', fontFamily: 'inherit', marginTop: 4 },
 }
