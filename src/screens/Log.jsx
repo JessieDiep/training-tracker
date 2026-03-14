@@ -21,7 +21,7 @@ const RUN_TYPES     = ['Recovery', 'Tempo', 'Intervals', 'Long Run', 'Brick Run'
 const RUN_PRESETS   = [1, 2, 3, 4, 5]
 const RUN_SURFACES  = ['Road', 'Treadmill', 'Trail', 'Soft Surface']
 const STRENGTH_FOCUS = ['Glutes', 'Legs', 'Core', 'Upper Body', 'Full Body', 'Mobility']
-const RECOVER_TYPES = ['Walk', 'Stretch', 'Foam Roll', 'Yoga', 'Posture Correction']
+const RECOVER_TYPES = ['Walk', 'Stretch', 'Yoga', 'Posture Correction']
 const SEND_STATUS   = [
   { id: 'sent',    label: 'Sent ✓',  color: '#2D8B6F', bg: '#E8FAF3' },
   { id: 'working', label: 'Working', color: '#C47A2B', bg: '#FFF4E8' },
@@ -453,6 +453,13 @@ export default function Log() {
   const [saving,        setSaving]       = useState(false)
   const [savedExercises,setSavedExercises] = useState({})
 
+  // Default to today in local time (YYYY-MM-DD)
+  const todayIso = (() => {
+    const d = new Date()
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+  })()
+  const [workoutDate, setWorkoutDate] = useState(todayIso)
+
   // Load each user's last-used weight per exercise from their workout history
   useEffect(() => {
     if (!user) return
@@ -525,6 +532,7 @@ export default function Log() {
         effort,
         details: getDetails(),
         notes:   getNotes(),
+        date:    workoutDate,
       })
       setSaved(true)
     } catch (err) {
@@ -537,6 +545,7 @@ export default function Log() {
         setSelectedDisc(null)
         setDuration(45)
         setEffort(5)
+        setWorkoutDate(todayIso)
       }, 2200)
     }
   }
@@ -605,6 +614,14 @@ export default function Log() {
 
         ) : (
           <>
+            <Label>Date</Label>
+            <input
+              type="date"
+              style={s.dateInput}
+              value={workoutDate}
+              max={todayIso}
+              onChange={e => setWorkoutDate(e.target.value)}
+            />
             <Label>Duration *</Label>
             <TapField value={duration} unit="min" onConfirm={v => setDuration(v)} />
             {getDiscForm()}
@@ -646,6 +663,7 @@ const s = {
   label:    { fontSize: 11, fontWeight: 800, color: 'var(--t-muted)', marginBottom: 8, marginTop: 16 },
   optional: { fontWeight: 600, textTransform: 'none', letterSpacing: 0, color: '#D4B0C0', fontSize: 11 },
 
+  dateInput:    { width: '100%', background: 'var(--t-surface)', border: '1.5px solid var(--t-mid)', borderRadius: 12, padding: '10px 14px', fontSize: 15, fontWeight: 700, color: 'var(--t-dark)', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' },
   tapField:     { display: 'flex', alignItems: 'center', gap: 6, background: 'var(--t-surface)', border: '1.5px solid var(--t-mid)', borderRadius: 12, padding: '10px 14px', cursor: 'pointer', width: '100%', fontFamily: 'inherit' },
   tapFieldNum:  { fontSize: 24, fontWeight: 900 },
   tapFieldUnit: { fontSize: 13, fontWeight: 700 },

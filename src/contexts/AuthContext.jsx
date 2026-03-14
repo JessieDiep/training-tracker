@@ -4,9 +4,10 @@ import { supabase } from '../lib/supabase'
 const AuthContext = createContext()
 
 export function AuthProvider({ children }) {
-  const [user,    setUser]    = useState(null)
-  const [profile, setProfile] = useState(null)
-  const [loading, setLoading] = useState(true)
+  const [user,         setUser]         = useState(null)
+  const [profile,      setProfile]      = useState(null)
+  const [loading,      setLoading]      = useState(true)
+  const [recoveryMode, setRecoveryMode] = useState(false)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -16,6 +17,14 @@ export function AuthProvider({ children }) {
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY') {
+        // Keep user set so updateUser() works, but flag recovery mode
+        // so App.jsx keeps Auth mounted for the "set new password" form
+        setUser(session?.user ?? null)
+        setRecoveryMode(true)
+        setLoading(false)
+        return
+      }
       setUser(session?.user ?? null)
       if (session?.user) {
         // Don't re-fetch profile on token refresh — avoids race where profile
@@ -62,6 +71,10 @@ export function AuthProvider({ children }) {
     if (user) await fetchProfile(user.id)
   }
 
+  function clearRecoveryMode() {
+    setRecoveryMode(false)
+  }
+
   async function resetPassword(email) {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: window.location.origin,
@@ -80,7 +93,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, signUp, signOut, refreshProfile, updateProfile, resetPassword }}>
+    <AuthContext.Provider value={{ user, profile, loading, recoveryMode, clearRecoveryMode, signIn, signUp, signOut, refreshProfile, updateProfile, resetPassword }}>
       {children}
     </AuthContext.Provider>
   )

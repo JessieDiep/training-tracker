@@ -3,19 +3,16 @@ import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
 
 export default function Auth() {
-  const { signIn, signUp, resetPassword } = useAuth()
+  const { signIn, signUp, resetPassword, recoveryMode, clearRecoveryMode } = useAuth()
   const [mode,    setMode]    = useState('login')   // 'login' | 'signup' | 'forgot' | 'update'
   const [error,   setError]   = useState('')
   const [loading, setLoading] = useState(false)
   const [forgotSent, setForgotSent] = useState(false)
 
-  // Detect password recovery link click
+  // Switch to update form when recovery mode is active (set by AuthContext)
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setMode('update')
-    })
-    return () => subscription.unsubscribe()
-  }, [])
+    if (recoveryMode) setMode('update')
+  }, [recoveryMode])
 
   // Login fields
   const [loginEmail,    setLoginEmail]    = useState('')
@@ -108,6 +105,7 @@ export default function Auth() {
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword })
       if (error) throw error
+      clearRecoveryMode()
     } catch (err) {
       setError(err.message || 'Failed to update password')
     } finally {

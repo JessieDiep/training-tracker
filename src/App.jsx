@@ -11,7 +11,7 @@ import Coach from './screens/Coach'
 import { applyTheme, loadTheme } from './lib/themes'
 
 function AppLayout() {
-  const { user, loading } = useAuth()
+  const { user, loading, recoveryMode } = useAuth()
   const location = useLocation()
   const path = location.pathname.slice(1) || 'home'
   const activeTab = ['home', 'log', 'plan', 'progress', 'coach'].includes(path) ? path : 'home'
@@ -26,7 +26,7 @@ function AppLayout() {
     )
   }
 
-  if (!user) return <Auth />
+  if (!user || recoveryMode) return <Auth />
 
   return (
     <div className="pwa-shell">
