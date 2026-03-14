@@ -27,64 +27,24 @@ function nowStr() {
 
 
 // ── CONTEXT BAR ───────────────────────────────────────────────────────────────
-function ContextBar({ daysToRace, raceDateLabel, recentWorkouts, thisWeekWorkouts, injury }) {
-  const [expanded, setExpanded] = useState(false)
-  const PLAN_SESSIONS = 6
-  const weekDone = thisWeekWorkouts.length
-
+function ContextBar({ daysToRace, injury }) {
   return (
     <div style={cx.wrap}>
-      <button style={cx.pill} onClick={() => setExpanded(e => !e)}>
+      <div style={cx.pill}>
         <div style={cx.pillDot} />
         <span style={cx.pillText}>
-          Coach sees:{daysToRace != null ? ` ${daysToRace}d to race ·` : ''} this week: {weekDone}/{PLAN_SESSIONS} sessions
-          {injury ? ' · ⚠️ injury' : ''}
+          Coach sees your full workout history and personal bests
+          {daysToRace != null ? ` · ${daysToRace}d to race` : ''}
+          {injury ? ' · ⚠️ injury flagged' : ''}
         </span>
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-          style={{ transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', flexShrink: 0 }}>
-          <path d="M6 9L12 15L18 9" stroke="var(--t-active)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </button>
-      {expanded && (
-        <div style={cx.drawer}>
-          {raceDateLabel && (
-            <div style={cx.drawerRow}>
-              <span style={cx.drawerLabel}>Race</span>
-              <span style={cx.drawerVal}>{raceDateLabel} · {daysToRace} days</span>
-            </div>
-          )}
-          {injury && (
-            <div style={cx.drawerRow}>
-              <span style={cx.drawerLabel}>Injury</span>
-              <span style={{ ...cx.drawerVal, color: '#C4354F' }}>{injury}</span>
-            </div>
-          )}
-          <div style={cx.drawerLabel}>This week</div>
-          {thisWeekWorkouts.slice(0, 5).map((w, i) => {
-            const d = DISC_COLORS[w.discipline] ?? { color: '#F4D0DC', dark: 'var(--t-muted)' }
-            return (
-              <div key={i} style={cx.workoutRow}>
-                <div style={{ ...cx.workoutDot, background: d.color }} />
-                <span style={{ ...cx.workoutType, color: d.dark }}>
-                  {w.discipline.charAt(0).toUpperCase() + w.discipline.slice(1)}
-                </span>
-                <span style={cx.workoutDetail}>{formatWorkoutDetail(w)}</span>
-                <span style={cx.workoutDay}>{formatRelativeDate(w.date)}</span>
-              </div>
-            )
-          })}
-          {thisWeekWorkouts.length === 0 && (
-            <div style={{ color: '#C0A0B8', fontSize: 11 }}>No sessions logged this week yet</div>
-          )}
-        </div>
-      )}
+      </div>
     </div>
   )
 }
 
 const cx = {
   wrap:         { marginBottom: 12 },
-  pill:         { width: '100%', background: 'var(--t-surface)', border: '1.5px solid var(--t-border)', borderRadius: 12, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: 'inherit' },
+  pill:         { width: '100%', background: 'var(--t-surface)', border: '1.5px solid var(--t-border)', borderRadius: 12, padding: '8px 12px', display: 'flex', alignItems: 'center', gap: 8 },
   pillDot:      { width: 7, height: 7, borderRadius: 4, background: 'var(--t-active)', flexShrink: 0, boxShadow: '0 0 0 2px var(--t-mid)' },
   pillText:     { flex: 1, fontSize: 11, fontWeight: 700, color: 'var(--t-dark)', textAlign: 'left' },
   drawer:       { background: 'var(--t-surface)', border: '1.5px solid var(--t-border)', borderTop: 'none', borderRadius: '0 0 12px 12px', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 6 },
@@ -282,13 +242,7 @@ export default function Coach() {
 
       {/* CONTEXT BAR */}
       <div style={{ padding: '10px 16px 0' }}>
-        <ContextBar
-          daysToRace={daysToRace}
-          raceDateLabel={raceDateLabel}
-          recentWorkouts={recentWorkouts}
-          thisWeekWorkouts={thisWeekWorkouts}
-          injury={injury}
-        />
+        <ContextBar daysToRace={daysToRace} injury={injury} />
       </div>
 
       {/* MESSAGES */}
