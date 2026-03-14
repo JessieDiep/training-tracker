@@ -196,25 +196,49 @@ function buildPrompt(profile, workoutHistory, pbsSection) {
 
   let athleteSection = `Name: ${name}\nInjury / health flags: ${injury}`
 
+  const distances = profile.race_distances || {}
+  const hasSkim  = !!distances.swim
+  const hasBike  = !!distances.bike
+  const hasRun   = !!distances.run
+
+  // Derive race type and coach identity from which disciplines are in the race
+  const raceType = hasSkim ? 'triathlon' : hasBike ? 'duathlon' : 'running'
+  const coachLabel = hasSkim ? 'triathlon' : hasBike ? 'duathlon' : 'running'
+
   if (profile.has_race) {
     const daysToRace = Math.max(
       Math.ceil((new Date(profile.race_date + 'T12:00:00') - new Date()) / 86400000), 0
     )
-    const distances = profile.race_distances || {}
-    const distStr   = [
+    const distStr = [
       distances.swim && `${distances.swim}m swim`,
       distances.bike && `${distances.bike}km bike`,
       distances.run  && `${distances.run}km run`,
     ].filter(Boolean).join(' · ')
 
     athleteSection = `Name: ${name}
+Race type: ${raceType}
 Race: ${profile.race_name || 'Race'}, ${profile.race_date} (${daysToRace} days away)
 Goal: ${profile.race_goal || 'Finish strong'}
 Distances: ${distStr}
 Injury / health flags: ${injury}`
   }
 
-  return `You are an expert triathlon coach. Output ONLY a valid JSON object — no markdown, no code fences, no explanation.
+  // Build output schema with only the disciplines in the race
+  const schemaLines = [
+    hasSkim && `  "swim": [{ "type": "string", "structure": "string", "duration": number, "effort": number }]`,
+    hasBike && `  "bike": [{ "type": "string", "structure": "string", "duration": number, "effort": number }]`,
+    hasRun  && `  "run":  [{ "type": "string", "structure": "string", "duration": number, "effort": number }]`,
+    `  "rationale": "string"`,
+  ].filter(Boolean).join(',\n')
+
+  // Build session type rules for present disciplines only
+  const sessionTypeRules = [
+    hasSkim && '- Session types for swim: Technique, Endurance, Threshold, Intervals, Race Pace',
+    hasBike && '- Session types for bike: Endurance, Tempo, Threshold, Intervals, Recovery Spin',
+    hasRun  && '- Session types for run: Recovery, Easy, Tempo, Intervals, Long Run, Progression Run, Strides, Brick Run',
+  ].filter(Boolean).join('\n')
+
+  return `You are an expert ${coachLabel} coach. Output ONLY a valid JSON object — no markdown, no code fences, no explanation.
 Generate a structured weekly training plan for ${name}.
 
 == TODAY ==
@@ -228,17 +252,12 @@ ${workoutHistory}
 
 == OUTPUT SCHEMA ==
 {
-  "swim": [{ "type": "string", "structure": "string", "duration": number, "effort": number }],
-  "bike": [{ "type": "string", "structure": "string", "duration": number, "effort": number }],
-  "run":  [{ "type": "string", "structure": "string", "duration": number, "effort": number }],
-  "rationale": "string"
+${schemaLines}
 }
 
 == RULES ==
-- 1-3 sessions per discipline per week; start conservatively (1 per discipline) when race is >16 weeks away, ramp to 2-3 in the build phase; reduce if athlete shows signs of overtraining or is injured
-- Session types for swim: Technique, Endurance, Threshold, Intervals, Race Pace
-- Session types for bike: Endurance, Tempo, Threshold, Intervals, Recovery Spin
-- Session types for run: Recovery, Tempo, Intervals, Long Run, Brick Run
+- Determine the appropriate number of sessions per discipline based on race type, race distance, athlete history, and training phase. Use best practices for the specific event — a 5k runner may need 2–3 runs/week, a marathoner 4–5; a sprint triathlete needs fewer sessions than an Ironman athlete. Reduce volume if the athlete shows signs of overtraining or is injured.
+${sessionTypeRules}
 - Follow periodization based on days to race: >90 days = base phase (volume, aerobic), 30-90 days = build phase (intensity, race-pace), <30 days = taper (reduced volume, sharpness)
 - Roughly 80% of sessions at effort ≤6, 20% at effort ≥7
 - Never prescribe high-effort sessions for injured body parts — reference and respect injury flags

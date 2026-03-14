@@ -147,7 +147,7 @@ export default function Plan() {
           <div style={s.empty}>Generating your plan…</div>
         ) : weeklyGoals ? (
           <>
-            {['swim', 'bike', 'run'].map(disc => {
+            {['swim', 'bike', 'run'].filter(disc => (weeklyGoals[disc]?.length ?? 0) > 0).map(disc => {
               const d        = DISC_CONFIG[disc]
               const sessions = weeklyGoals[disc] ?? []
               const done     = weekCompleted[disc] ?? 0
