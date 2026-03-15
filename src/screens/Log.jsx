@@ -677,7 +677,7 @@ const s = {
   label:    { fontSize: 11, fontWeight: 800, color: 'var(--t-muted)', marginBottom: 8, marginTop: 16 },
   optional: { fontWeight: 600, textTransform: 'none', letterSpacing: 0, color: '#D4B0C0', fontSize: 11 },
 
-  dateInput:    { width: '100%', background: 'var(--t-surface)', border: '1.5px solid var(--t-mid)', borderRadius: 12, padding: '10px 14px', fontSize: 15, fontWeight: 700, color: 'var(--t-dark)', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' },
+  dateInput:    { width: '100%', background: 'var(--t-surface)', border: '1.5px solid var(--t-mid)', borderRadius: 12, padding: '10px 14px', fontSize: 15, fontWeight: 700, color: 'var(--t-dark)', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box', WebkitAppearance: 'none', appearance: 'none' },
   tapField:     { display: 'flex', alignItems: 'center', gap: 6, background: 'var(--t-surface)', border: '1.5px solid var(--t-mid)', borderRadius: 12, padding: '10px 14px', cursor: 'pointer', width: '100%', fontFamily: 'inherit' },
   tapFieldNum:  { fontSize: 24, fontWeight: 900 },
   tapFieldUnit: { fontSize: 13, fontWeight: 700 },
