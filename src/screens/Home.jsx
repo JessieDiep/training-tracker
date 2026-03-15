@@ -28,7 +28,6 @@ function toISODate(date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
-const FALLBACK_START = new Date(2026, 0, 5)   // Jan 5 2026 — used if no workouts yet
 const RING_R = 36                              // SVG ring radius (inside 96×96 viewBox)
 const RING_C = 2 * Math.PI * RING_R           // full circumference ≈ 226.2
 
@@ -620,7 +619,7 @@ export default function Home() {
   const [loading,         setLoading]         = useState(true)
   const [fetchError,      setFetchError]      = useState(false)
   const [selectedWorkout, setSelectedWorkout] = useState(null)
-  const [trainingStart,   setTrainingStart]   = useState(FALLBACK_START)
+  const [trainingStart,   setTrainingStart]   = useState(null)
   const [ringProgress,    setRingProgress]    = useState(0)
   const [weeklyGoals,     setWeeklyGoals]     = useState(null)
   const [goalsLoading,    setGoalsLoading]    = useState(true)
@@ -685,7 +684,7 @@ export default function Home() {
     loadGoals()
 
     getTrainingStartDate()
-      .then(d => { if (d) setTrainingStart(d) })
+      .then(d => { setTrainingStart(d ?? new Date()) })
       .catch(() => {})
   }, [])
 
@@ -730,7 +729,7 @@ export default function Home() {
 
   // Animate ring fill after trainingStart resolves
   useEffect(() => {
-    if (!RACE_DATE) return
+    if (!RACE_DATE || !trainingStart) return
     const today     = new Date()
     const totalDays = Math.max(Math.round((RACE_DATE - trainingStart) / 86400000), 1)
     const elapsed   = Math.round((today - trainingStart) / 86400000)

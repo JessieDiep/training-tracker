@@ -404,8 +404,10 @@ module.exports = async function handler(req, res) {
     }
   }
 
-  if (!Array.isArray(goals.swim) || !Array.isArray(goals.bike) || !Array.isArray(goals.run)) {
-    return res.status(502).json({ error: 'AI response missing required disciplines' })
+  const requiredDiscs = ['swim', 'bike', 'run'].filter(d => (profile.race_distances || {})[d])
+  const missing = requiredDiscs.filter(d => !Array.isArray(goals[d]))
+  if (missing.length > 0) {
+    return res.status(502).json({ error: `AI response missing required disciplines: ${missing.join(', ')}` })
   }
 
   // ── Upsert into weekly_goals ───────────────────────────────────────────────

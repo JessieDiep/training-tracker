@@ -1,4 +1,5 @@
 import { defineConfig, loadEnv } from 'vite'
+import { createRequire } from 'module'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
@@ -70,6 +71,43 @@ export default defineConfig(({ mode }) => {
         },
       }),
 
+      // Dev-only: local handler for /api/weekly-goals so npm run dev works without vercel
+      {
+        name: 'local-weekly-goals-api',
+        configureServer(server) {
+          server.middlewares.use('/api/weekly-goals', async (req, res) => {
+            if (req.method !== 'POST') {
+              res.statusCode = 405
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ error: 'Method not allowed' }))
+              return
+            }
+            try {
+              const raw = await new Promise((resolve, reject) => {
+                let data = ''
+                req.on('data', chunk => { data += chunk })
+                req.on('end', () => resolve(data))
+                req.on('error', reject)
+              })
+              req.body = JSON.parse(raw)
+              // Expose env vars for the CJS handler
+              process.env.VITE_SUPABASE_URL      = env.VITE_SUPABASE_URL
+              process.env.VITE_SUPABASE_ANON_KEY = env.VITE_SUPABASE_ANON_KEY
+              process.env.OPENAI_API_KEY = env.OPENAI_API_KEY || env.COACH_API_KEY
+              const require = createRequire(import.meta.url)
+              // Clear cache so edits to the handler are picked up on restart
+              delete require.cache[require.resolve('./api/weekly-goals.js')]
+              const handler = require('./api/weekly-goals.js')
+              await handler(req, res)
+            } catch (e) {
+              res.statusCode = 500
+              res.setHeader('Content-Type', 'application/json')
+              res.end(JSON.stringify({ error: e.message }))
+            }
+          })
+        },
+      },
+
       // Dev-only: local handler for /api/coach so npm run dev works without vercel
       {
         name: 'local-coach-api',
@@ -89,11 +127,11 @@ export default defineConfig(({ mode }) => {
               })
               const { message, history = [], phase = 'Race Mode', injuryFlags = 'None' } = JSON.parse(raw)
 
-              const apiKey = env.COACH_API_KEY
+              const apiKey = env.OPENAI_API_KEY || env.COACH_API_KEY
               if (!apiKey) {
                 res.statusCode = 500
                 res.setHeader('Content-Type', 'application/json')
-                res.end(JSON.stringify({ error: 'COACH_API_KEY not found in .env.local' }))
+                res.end(JSON.stringify({ error: 'OPENAI_API_KEY not found in .env.local' }))
                 return
               }
 

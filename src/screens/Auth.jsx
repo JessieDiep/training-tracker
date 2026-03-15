@@ -474,6 +474,8 @@ const s = {
     fontFamily: "'Nunito', system-ui, sans-serif",
     outline: 'none',
     boxSizing: 'border-box',
+    WebkitAppearance: 'none',
+    appearance: 'none',
   },
   textarea: {
     width: '100%',
