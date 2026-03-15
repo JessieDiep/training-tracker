@@ -633,6 +633,9 @@ export default function Home() {
         setWeekWorkouts(week)
         setRecentWorkouts(recent)
         if (recent.length > 0) {
+          // Auto-dismiss onboarding checklist for anyone who already has workouts
+          localStorage.setItem('tt_gs_progress', '1')
+          setGsProgressDone(true)
           // Lightweight check: does anything exist older than our oldest fetched workout?
           const { hasMore } = await getWorkoutsBefore(recent[recent.length - 1].date, 0)
           setHasMoreWorkouts(hasMore)
