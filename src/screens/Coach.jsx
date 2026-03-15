@@ -58,6 +58,41 @@ const cx = {
   workoutDay:   { fontSize: 10, color: '#A0C4B4', fontWeight: 700, flexShrink: 0 },
 }
 
+// ── MARKDOWN RENDERER ─────────────────────────────────────────────────────────
+function renderBold(text) {
+  const parts = text.split(/\*\*(.+?)\*\*/g)
+  return parts.map((part, i) => i % 2 === 1 ? <strong key={i}>{part}</strong> : part)
+}
+
+function renderMarkdown(text) {
+  const lines = text.split('\n')
+  const out = []
+  let listItems = []
+
+  function flushList() {
+    if (!listItems.length) return
+    out.push(
+      <ul key={out.length} style={{ margin: '4px 0', paddingLeft: 18 }}>
+        {listItems.map((item, i) => <li key={i} style={{ marginBottom: 2 }}>{renderBold(item)}</li>)}
+      </ul>
+    )
+    listItems = []
+  }
+
+  for (const line of lines) {
+    const bullet = line.match(/^[-*]\s+(.+)/)
+    if (bullet) {
+      listItems.push(bullet[1])
+    } else {
+      flushList()
+      const trimmed = line.trim()
+      if (trimmed) out.push(<p key={out.length} style={{ margin: '2px 0' }}>{renderBold(trimmed)}</p>)
+    }
+  }
+  flushList()
+  return out
+}
+
 // ── MESSAGE BUBBLE ─────────────────────────────────────────────────────────────
 function Bubble({ msg }) {
   const isUser = msg.role === 'user'
@@ -75,7 +110,9 @@ function Bubble({ msg }) {
         </div>
       )}
       <div style={{ ...b.bubble, ...(isUser ? b.userBubble : b.aiBubble), maxWidth: '78%' }}>
-        <div style={{ ...b.text, color: isUser ? '#fff' : 'var(--t-text)' }}>{msg.text}</div>
+        <div style={{ ...b.text, color: isUser ? '#fff' : 'var(--t-text)' }}>
+          {isUser ? msg.text : renderMarkdown(msg.text)}
+        </div>
         <div style={{ ...b.time, color: isUser ? 'rgba(255,255,255,0.6)' : '#C0A0B8' }}>{msg.time}</div>
       </div>
     </div>
